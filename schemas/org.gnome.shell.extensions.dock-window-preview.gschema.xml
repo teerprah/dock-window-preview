@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dock-window-preview" path="/org/gnome/shell/extensions/dock-window-preview/">
+    <key name="hover-delay-ms" type="i">
+      <default>180</default>
+      <summary>Hover delay in milliseconds</summary>
+      <description>Delay before the preview popup appears after the pointer enters a dock icon.</description>
+    </key>
+    <key name="preview-layout" type="s">
+      <default>'vertical'</default>
+      <choices>
+        <choice value='vertical'/>
+        <choice value='horizontal'/>
+      </choices>
+      <summary>Preview layout orientation</summary>
+      <description>Whether previews are arranged in a vertical stack or horizontal strip.</description>
+    </key>
+    <key name="preview-width" type="i">
+      <default>260</default>
+      <summary>Preview thumbnail width</summary>
+      <description>Width of each preview thumbnail in pixels.</description>
+    </key>
+    <key name="preview-height" type="i">
+      <default>160</default>
+      <summary>Preview thumbnail height</summary>
+      <description>Height of each preview thumbnail in pixels.</description>
+    </key>
+  </schema>
+</schemalist>
