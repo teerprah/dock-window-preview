@@ -2,7 +2,9 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
+import * as Dash from 'resource:///org/gnome/shell/ui/dash.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const SETTINGS_SCHEMA = 'org.gnome.shell.extensions.dock-window-preview';
@@ -28,6 +30,21 @@ function hasStyleClass(actor, className) {
 
     const style = actor.get_style_class_name();
     return typeof style === 'string' && style.split(/\s+/).includes(className);
+}
+
+function getVisibleAppWindows(app) {
+    if (!app || typeof app.get_windows !== 'function')
+        return [];
+
+    return app.get_windows().filter(window => {
+        if (!window)
+            return false;
+
+        if (typeof window.is_skip_taskbar === 'function')
+            return !window.is_skip_taskbar();
+
+        return !window.skip_taskbar;
+    });
 }
 
 class WindowPreviewPopup {
@@ -564,11 +581,31 @@ export default class DockWindowPreviewExtension extends Extension {
             this._settings = null;
         }
 
+        this._injectionManager = new InjectionManager();
+        this._injectionManager.overrideMethod(
+            AppDisplay.AppIcon.prototype,
+            'shouldShowTooltip',
+            originalMethod => function () {
+                if (this instanceof Dash.DashIcon && getVisibleAppWindows(this.app).length > 0)
+                    return false;
+
+                if (typeof originalMethod === 'function')
+                    return originalMethod.call(this);
+
+                return false;
+            }
+        );
+
         this._tracker = new DockHoverTracker(this._settings);
         this._tracker.enable();
     }
 
     disable() {
+        if (this._injectionManager) {
+            this._injectionManager.clear();
+            this._injectionManager = null;
+        }
+
         if (!this._tracker)
             return;
 
