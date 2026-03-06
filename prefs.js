@@ -88,6 +88,36 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         layoutRow.activatable_widget = layoutDropdown;
         previewGroup.add(layoutRow);
 
+        const titleOverflowRow = new Adw.ActionRow({
+            title: 'Title Overflow',
+            subtitle: 'Choose whether long titles truncate or wrap.',
+        });
+
+        const titleOverflowModel = Gtk.StringList.new([
+            'Truncate with ellipsis',
+            'Wrap to next line',
+        ]);
+        const titleOverflowDropdown = new Gtk.DropDown({
+            model: titleOverflowModel,
+            selected: settings.get_string('title-overflow-mode') === 'wrap' ? 1 : 0,
+            valign: Gtk.Align.CENTER,
+        });
+
+        titleOverflowDropdown.connect('notify::selected', () => {
+            const mode = titleOverflowDropdown.selected === 1 ? 'wrap' : 'truncate';
+            settings.set_string('title-overflow-mode', mode);
+        });
+
+        settings.connect('changed::title-overflow-mode', () => {
+            const selected = settings.get_string('title-overflow-mode') === 'wrap' ? 1 : 0;
+            if (titleOverflowDropdown.selected !== selected)
+                titleOverflowDropdown.selected = selected;
+        });
+
+        titleOverflowRow.add_suffix(titleOverflowDropdown);
+        titleOverflowRow.activatable_widget = titleOverflowDropdown;
+        previewGroup.add(titleOverflowRow);
+
         previewGroup.add(createSpinRow({
             title: 'Preview Width',
             subtitle: 'Width of each window thumbnail (pixels).',

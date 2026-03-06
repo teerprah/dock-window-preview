@@ -35,4 +35,5 @@ Direct script usage:
   - Hover delay (ms)
   - Vertical or horizontal preview layout
   - Preview thumbnail width/height
+  - Title overflow behavior (truncate or wrap)
 - The hover detector is tuned for dash/dock icons and uses the same app-window model as dock menu entries (including the "All Windows" behavior).
