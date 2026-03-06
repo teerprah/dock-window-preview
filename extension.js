@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -15,6 +16,7 @@ const DEFAULT_HOVER_DELAY_MS = 180;
 const DEFAULT_PREVIEW_LAYOUT = 'vertical';
 const DEFAULT_PREVIEW_WIDTH = 260;
 const DEFAULT_PREVIEW_HEIGHT = 160;
+const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -34,6 +36,7 @@ class WindowPreviewPopup {
         this._previewLayout = DEFAULT_PREVIEW_LAYOUT;
         this._previewWidth = DEFAULT_PREVIEW_WIDTH;
         this._previewHeight = DEFAULT_PREVIEW_HEIGHT;
+        this._titleOverflowMode = DEFAULT_TITLE_OVERFLOW_MODE;
 
         this._actor = new St.BoxLayout({
             style_class: 'dock-preview-popup',
@@ -58,6 +61,7 @@ class WindowPreviewPopup {
         this._previewLayout = layout === 'horizontal' ? 'horizontal' : 'vertical';
         this._previewWidth = clamp(config.previewWidth, 120, 640);
         this._previewHeight = clamp(config.previewHeight, 80, 480);
+        this._titleOverflowMode = config.titleOverflowMode === 'wrap' ? 'wrap' : 'truncate';
     }
 
     containsActor(actor) {
@@ -128,12 +132,7 @@ class WindowPreviewPopup {
         });
 
         layout.add_child(this._createThumbnail(metaWindow, app));
-        layout.add_child(new St.Label({
-            style_class: 'dock-preview-title',
-            text: metaWindow.get_title() || app.get_name(),
-            x_align: Clutter.ActorAlign.START,
-            x_expand: true,
-        }));
+        layout.add_child(this._createTitleLabel(metaWindow, app));
 
         button.set_child(layout);
         button.connect('clicked', () => {
@@ -142,6 +141,35 @@ class WindowPreviewPopup {
         });
 
         return button;
+    }
+
+    _createTitleLabel(metaWindow, app) {
+        const titleLabel = new St.Label({
+            style_class: 'dock-preview-title',
+            text: metaWindow.get_title() || app.get_name(),
+            x_align: Clutter.ActorAlign.START,
+            x_expand: false,
+        });
+
+        titleLabel.set_width(this._previewWidth);
+        titleLabel.set_style(`max-width: ${this._previewWidth}px;`);
+
+        const textActor = titleLabel.clutter_text;
+        if (!textActor)
+            return titleLabel;
+
+        if (this._titleOverflowMode === 'wrap') {
+            textActor.single_line_mode = false;
+            textActor.line_wrap = true;
+            textActor.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+            textActor.ellipsize = Pango.EllipsizeMode.NONE;
+        } else {
+            textActor.single_line_mode = true;
+            textActor.line_wrap = false;
+            textActor.ellipsize = Pango.EllipsizeMode.END;
+        }
+
+        return titleLabel;
     }
 
     _createThumbnail(metaWindow, app) {
@@ -322,6 +350,7 @@ class DockHoverTracker {
             previewLayout: this._readLayoutSetting(),
             previewWidth,
             previewHeight,
+            titleOverflowMode: this._readTitleOverflowSetting(),
         });
 
         this._cancelShow();
@@ -348,6 +377,18 @@ class DockHoverTracker {
             return this._settings.get_string('preview-layout');
         } catch (error) {
             return DEFAULT_PREVIEW_LAYOUT;
+        }
+    }
+
+    _readTitleOverflowSetting() {
+        if (!this._settings)
+            return DEFAULT_TITLE_OVERFLOW_MODE;
+
+        try {
+            const value = this._settings.get_string('title-overflow-mode');
+            return value === 'wrap' ? 'wrap' : 'truncate';
+        } catch (error) {
+            return DEFAULT_TITLE_OVERFLOW_MODE;
         }
     }
 

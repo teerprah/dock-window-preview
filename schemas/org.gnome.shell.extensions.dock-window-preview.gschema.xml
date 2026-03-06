@@ -25,5 +25,14 @@
       <summary>Preview thumbnail height</summary>
       <description>Height of each preview thumbnail in pixels.</description>
     </key>
+    <key name="title-overflow-mode" type="s">
+      <default>'truncate'</default>
+      <choices>
+        <choice value='truncate'/>
+        <choice value='wrap'/>
+      </choices>
+      <summary>Preview title overflow behavior</summary>
+      <description>Whether long window titles are truncated with ellipsis or wrapped to the next line.</description>
+    </key>
   </schema>
 </schemalist>
