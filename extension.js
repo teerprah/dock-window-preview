@@ -126,6 +126,7 @@ class WindowPreviewPopup {
         this._clearChildren();
         Main.layoutManager.removeChrome(this._actor);
         this._actor.destroy();
+        this._actor = null;
         this._sourceActor = null;
     }
 
