@@ -29,6 +29,35 @@ function createSpinRow({title, subtitle, settings, key, min, max, step}) {
     return row;
 }
 
+function createSelectionRow({title, subtitle, settings, key, options}) {
+    const row = new Adw.ActionRow({title, subtitle});
+    const model = Gtk.StringList.new(options.map(option => option.label));
+    const dropdown = new Gtk.DropDown({
+        model,
+        valign: Gtk.Align.CENTER,
+    });
+
+    const syncSelected = () => {
+        const value = settings.get_string(key);
+        const index = options.findIndex(option => option.value === value);
+        const selected = index >= 0 ? index : 0;
+        if (dropdown.selected !== selected)
+            dropdown.selected = selected;
+    };
+
+    syncSelected();
+    dropdown.connect('notify::selected', () => {
+        const option = options[dropdown.selected] ?? options[0];
+        settings.set_string(key, option.value);
+    });
+
+    settings.connect(`changed::${key}`, syncSelected);
+    row.add_suffix(dropdown);
+    row.activatable_widget = dropdown;
+
+    return {row, dropdown};
+}
+
 export default class DockWindowPreviewPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings(SCHEMA_ID);
@@ -117,6 +146,29 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         titleOverflowRow.add_suffix(titleOverflowDropdown);
         titleOverflowRow.activatable_widget = titleOverflowDropdown;
         previewGroup.add(titleOverflowRow);
+
+        const closeButtonRow = new Adw.SwitchRow({
+            title: 'Show Close Button',
+            subtitle: 'Show a close control on each window preview.',
+        });
+        settings.bind('show-close-button', closeButtonRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        previewGroup.add(closeButtonRow);
+
+        const {row: closeButtonPositionRow} = createSelectionRow({
+            title: 'Close Button Position',
+            subtitle: 'Choose which side of the preview card shows the close control.',
+            settings,
+            key: 'close-button-position',
+            options: [
+                {label: 'Left side', value: 'left'},
+                {label: 'Right side', value: 'right'},
+            ],
+        });
+        closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
+        settings.connect('changed::show-close-button', () => {
+            closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
+        });
+        previewGroup.add(closeButtonPositionRow);
 
         previewGroup.add(createSpinRow({
             title: 'Preview Width',
