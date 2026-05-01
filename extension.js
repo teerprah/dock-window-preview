@@ -19,6 +19,10 @@ const DEFAULT_PREVIEW_LAYOUT = 'vertical';
 const DEFAULT_PREVIEW_WIDTH = 260;
 const DEFAULT_PREVIEW_HEIGHT = 160;
 const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
+const DEFAULT_SHOW_CLOSE_BUTTON = false;
+const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
+const CLOSE_FADE_DURATION_MS = 180;
+const CLOSE_REFRESH_DELAY_MS = 220;
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -50,10 +54,14 @@ function getVisibleAppWindows(app) {
 class WindowPreviewPopup {
     constructor() {
         this._sourceActor = null;
+        this._app = null;
         this._previewLayout = DEFAULT_PREVIEW_LAYOUT;
         this._previewWidth = DEFAULT_PREVIEW_WIDTH;
         this._previewHeight = DEFAULT_PREVIEW_HEIGHT;
         this._titleOverflowMode = DEFAULT_TITLE_OVERFLOW_MODE;
+        this._showCloseButton = DEFAULT_SHOW_CLOSE_BUTTON;
+        this._closeButtonPosition = DEFAULT_CLOSE_BUTTON_POSITION;
+        this._refreshTimeoutId = 0;
 
         this._actor = new St.BoxLayout({
             style_class: 'dock-preview-popup',
@@ -64,9 +72,7 @@ class WindowPreviewPopup {
             visible: false,
         });
 
-        Main.layoutManager.addTopChrome(this._actor, {
-            affectsInputRegion: true,
-        });
+        Main.layoutManager.addTopChrome(this._actor);
     }
 
     get visible() {
@@ -79,6 +85,8 @@ class WindowPreviewPopup {
         this._previewWidth = clamp(config.previewWidth, 120, 640);
         this._previewHeight = clamp(config.previewHeight, 80, 480);
         this._titleOverflowMode = config.titleOverflowMode === 'wrap' ? 'wrap' : 'truncate';
+        this._showCloseButton = config.showCloseButton ?? DEFAULT_SHOW_CLOSE_BUTTON;
+        this._closeButtonPosition = config.closeButtonPosition === 'left' ? 'left' : 'right';
     }
 
     containsActor(actor) {
@@ -94,6 +102,7 @@ class WindowPreviewPopup {
         if (!sourceActor || windows.length === 0)
             return;
 
+        this._app = app;
         this._sourceActor = sourceActor;
         this._clearChildren();
 
@@ -118,15 +127,19 @@ class WindowPreviewPopup {
     }
 
     hide() {
+        this._cancelRefresh();
+        this._app = null;
         this._sourceActor = null;
         this._actor.hide();
     }
 
     destroy() {
+        this._cancelRefresh();
         this._clearChildren();
         Main.layoutManager.removeChrome(this._actor);
         this._actor.destroy();
         this._actor = null;
+        this._app = null;
         this._sourceActor = null;
     }
 
@@ -136,12 +149,19 @@ class WindowPreviewPopup {
     }
 
     _createWindowButton(metaWindow, app) {
+        const item = new St.Widget({
+            style_class: 'dock-preview-item-frame',
+            layout_manager: new Clutter.BinLayout(),
+            x_expand: this._previewLayout !== 'horizontal',
+        });
+
         const button = new St.Button({
             style_class: 'dock-preview-item',
             reactive: true,
             can_focus: true,
             track_hover: true,
             x_expand: this._previewLayout !== 'horizontal',
+            y_expand: true,
         });
 
         const layout = new St.BoxLayout({
@@ -158,7 +178,60 @@ class WindowPreviewPopup {
             Main.activateWindow(metaWindow);
         });
 
-        return button;
+        item.add_child(button);
+
+        if (this._showCloseButton)
+            item.add_child(this._createCloseButtonRow(item, metaWindow, app));
+
+        return item;
+    }
+
+    _createCloseButtonRow(item, metaWindow, app) {
+        const row = new St.BoxLayout({
+            style_class: 'dock-preview-item-controls',
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.FILL,
+            y_align: Clutter.ActorAlign.START,
+        });
+        const spacer = new St.Widget({x_expand: true});
+        const closeButton = this._createCloseButton(item, metaWindow, app);
+
+        if (this._closeButtonPosition === 'left') {
+            row.add_child(closeButton);
+            row.add_child(spacer);
+        } else {
+            row.add_child(spacer);
+            row.add_child(closeButton);
+        }
+
+        return row;
+    }
+
+    _createCloseButton(item, metaWindow, app) {
+        const closeIcon = new St.Icon({
+            icon_name: 'window-close-symbolic',
+            style_class: 'dock-preview-close-icon',
+        });
+        const closeButton = new St.Button({
+            style_class: 'dock-preview-close-button',
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+        });
+        closeButton.set_child(closeIcon);
+        closeButton.connect('clicked', () => {
+            this._animateWindowClose(item);
+
+            if (typeof metaWindow.delete === 'function')
+                metaWindow.delete(global.get_current_time());
+            else if (typeof app.request_quit === 'function')
+                app.request_quit();
+
+            this._queueRefresh();
+        });
+
+        return closeButton;
     }
 
     _createTitleLabel(metaWindow, app) {
@@ -294,6 +367,52 @@ class WindowPreviewPopup {
         distances.sort((left, right) => left[1] - right[1]);
         return distances[0][0];
     }
+
+    _queueRefresh() {
+        if (this._refreshTimeoutId)
+            return;
+
+        this._refreshTimeoutId = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            CLOSE_REFRESH_DELAY_MS,
+            () => {
+                this._refreshTimeoutId = 0;
+
+                if (!this._app || !this._sourceActor)
+                    return GLib.SOURCE_REMOVE;
+
+                const windows = getVisibleAppWindows(this._app);
+                if (windows.length === 0) {
+                    this.hide();
+                    return GLib.SOURCE_REMOVE;
+                }
+
+                this.show(this._app, windows, this._sourceActor);
+                return GLib.SOURCE_REMOVE;
+            }
+        );
+    }
+
+    _cancelRefresh() {
+        if (!this._refreshTimeoutId)
+            return;
+
+        GLib.source_remove(this._refreshTimeoutId);
+        this._refreshTimeoutId = 0;
+    }
+
+    _animateWindowClose(item) {
+        if (!item)
+            return;
+
+        item.reactive = false;
+        item.can_focus = false;
+        item.ease({
+            opacity: 0,
+            duration: CLOSE_FADE_DURATION_MS,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+        });
+    }
 }
 
 class DockHoverTracker {
@@ -369,6 +488,11 @@ class DockHoverTracker {
             previewWidth,
             previewHeight,
             titleOverflowMode: this._readTitleOverflowSetting(),
+            showCloseButton: this._readBooleanSetting(
+                'show-close-button',
+                DEFAULT_SHOW_CLOSE_BUTTON
+            ),
+            closeButtonPosition: this._readCloseButtonPositionSetting(),
         });
 
         this._cancelShow();
@@ -398,6 +522,17 @@ class DockHoverTracker {
         }
     }
 
+    _readBooleanSetting(key, fallback) {
+        if (!this._settings)
+            return fallback;
+
+        try {
+            return this._settings.get_boolean(key);
+        } catch (error) {
+            return fallback;
+        }
+    }
+
     _readTitleOverflowSetting() {
         if (!this._settings)
             return DEFAULT_TITLE_OVERFLOW_MODE;
@@ -407,6 +542,18 @@ class DockHoverTracker {
             return value === 'wrap' ? 'wrap' : 'truncate';
         } catch (error) {
             return DEFAULT_TITLE_OVERFLOW_MODE;
+        }
+    }
+
+    _readCloseButtonPositionSetting() {
+        if (!this._settings)
+            return DEFAULT_CLOSE_BUTTON_POSITION;
+
+        try {
+            const value = this._settings.get_string('close-button-position');
+            return value === 'left' ? 'left' : 'right';
+        } catch (error) {
+            return DEFAULT_CLOSE_BUTTON_POSITION;
         }
     }
 

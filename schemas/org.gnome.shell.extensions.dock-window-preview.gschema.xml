@@ -34,5 +34,19 @@
       <summary>Preview title overflow behavior</summary>
       <description>Whether long window titles are truncated with ellipsis or wrapped to the next line.</description>
     </key>
+    <key name="show-close-button" type="b">
+      <default>false</default>
+      <summary>Show close button in previews</summary>
+      <description>Whether each hover preview shows a close button for closing the corresponding window.</description>
+    </key>
+    <key name="close-button-position" type="s">
+      <default>'right'</default>
+      <choices>
+        <choice value='left'/>
+        <choice value='right'/>
+      </choices>
+      <summary>Close button position</summary>
+      <description>Whether the preview close button is shown on the left or right side of the preview card.</description>
+    </key>
   </schema>
 </schemalist>

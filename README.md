@@ -37,4 +37,5 @@ Direct script usage:
   - Vertical or horizontal preview layout
   - Preview thumbnail width/height
   - Title overflow behavior (truncate or wrap)
+  - Optional per-window close button with left/right placement
 - The hover detector is tuned for dash/dock icons and uses the same app-window model as dock menu entries (including the "All Windows" behavior).
