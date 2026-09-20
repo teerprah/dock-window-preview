@@ -1,5 +1,5 @@
 # dock-window-preview
-# Dock Window Preview (GNOME 49/50)
+# Dock Window Preview (GNOME 49/50/51)
 
 This GNOME Shell extension shows open-window previews when you hover a dock icon.
 Clicking a preview activates that window.
@@ -9,7 +9,7 @@ Clicking a preview activates that window.
 1. Run:
    `make install`
 2. Reload GNOME Shell:
-   - GNOME 50 / Wayland: log out and back in
+   - GNOME 50/51 / Wayland: log out and back in
    - GNOME 49 / X11: press `Alt+F2`, run `r`
 3. Enable the extension:
    `gnome-extensions enable dock-window-preview@quivio`
@@ -30,8 +30,8 @@ Direct script usage:
 
 ## Notes
 
-- Supports GNOME Shell 49 and 50 (`shell-version: ["49", "50"]`).
-- GNOME Shell 50 is Wayland-only, so a full log out / log in cycle is required after install.
+- Supports GNOME Shell 49, 50, and 51 (`shell-version: ["49", "50", "51"]`).
+- GNOME Shell 50 and later are Wayland-only, so a full log out / log in cycle is required after install.
 - Includes a preferences panel for:
   - Hover delay (ms)
   - Vertical or horizontal preview layout

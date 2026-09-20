@@ -21,7 +21,7 @@ install: $(INSTALL_FILES)
 	@if [[ -d "$(SCHEMA_DIR)" ]]; then mkdir -p "$(INSTALL_DIR)/$(SCHEMA_DIR)" && cp -R "$(SCHEMA_DIR)"/. "$(INSTALL_DIR)/$(SCHEMA_DIR)/"; fi
 	@if [[ -d "$(INSTALL_DIR)/$(SCHEMA_DIR)" ]]; then glib-compile-schemas "$(INSTALL_DIR)/$(SCHEMA_DIR)"; fi
 	@echo "Installed extension to $(INSTALL_DIR)"
-	@echo "Reload GNOME Shell (GNOME 50/Wayland: log out/in; GNOME 49 on X11: Alt+F2 then r)."
+	@echo "Reload GNOME Shell (GNOME 50/51 on Wayland: log out/in; GNOME 49 on X11: Alt+F2 then r)."
 
 zip: $(INSTALL_FILES)
 	@mkdir -p "$(DIST_DIR)"

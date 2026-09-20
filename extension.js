@@ -65,7 +65,7 @@ class WindowPreviewPopup {
 
         this._actor = new St.BoxLayout({
             style_class: 'dock-preview-popup',
-            vertical: true,
+            orientation: Clutter.Orientation.VERTICAL,
             reactive: true,
             can_focus: true,
             track_hover: true,
@@ -114,7 +114,9 @@ class WindowPreviewPopup {
 
         const itemsContainer = new St.BoxLayout({
             style_class: 'dock-preview-items',
-            vertical: this._previewLayout !== 'horizontal',
+            orientation: this._previewLayout === 'horizontal'
+                ? Clutter.Orientation.HORIZONTAL
+                : Clutter.Orientation.VERTICAL,
             x_expand: true,
         });
         this._actor.add_child(itemsContainer);
@@ -165,7 +167,7 @@ class WindowPreviewPopup {
         });
 
         const layout = new St.BoxLayout({
-            vertical: true,
+            orientation: Clutter.Orientation.VERTICAL,
             x_expand: true,
         });
 
