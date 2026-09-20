@@ -5,9 +5,10 @@
     "settings-schema": "org.gnome.shell.extensions.dock-window-preview",
     "shell-version": [
         "49",
-        "50"
+        "50",
+        "51"
     ],
     "url": "",
     "uuid": "dock-window-preview@quivio",
-    "version": 4
+    "version": 5
 }
