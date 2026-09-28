@@ -4,6 +4,7 @@
     "name": "Dock Window Preview",
     "settings-schema": "org.gnome.shell.extensions.dock-window-preview",
     "shell-version": [
+        "46",
         "49",
         "50",
         "51"
