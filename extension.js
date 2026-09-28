@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -23,6 +24,21 @@ const DEFAULT_SHOW_CLOSE_BUTTON = false;
 const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
 const CLOSE_FADE_DURATION_MS = 180;
 const CLOSE_REFRESH_DELAY_MS = 220;
+
+const BOX_LAYOUT_HAS_ORIENTATION =
+    GObject.Object.find_property.call(St.BoxLayout, 'orientation') !== null;
+
+function boxLayoutOrientation(vertical) {
+    if (BOX_LAYOUT_HAS_ORIENTATION) {
+        return {
+            orientation: vertical
+                ? Clutter.Orientation.VERTICAL
+                : Clutter.Orientation.HORIZONTAL,
+        };
+    }
+
+    return {vertical};
+}
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -65,7 +81,7 @@ class WindowPreviewPopup {
 
         this._actor = new St.BoxLayout({
             style_class: 'dock-preview-popup',
-            orientation: Clutter.Orientation.VERTICAL,
+            ...boxLayoutOrientation(true),
             reactive: true,
             can_focus: true,
             track_hover: true,
@@ -114,9 +130,7 @@ class WindowPreviewPopup {
 
         const itemsContainer = new St.BoxLayout({
             style_class: 'dock-preview-items',
-            orientation: this._previewLayout === 'horizontal'
-                ? Clutter.Orientation.HORIZONTAL
-                : Clutter.Orientation.VERTICAL,
+            ...boxLayoutOrientation(this._previewLayout !== 'horizontal'),
             x_expand: true,
         });
         this._actor.add_child(itemsContainer);
@@ -167,7 +181,7 @@ class WindowPreviewPopup {
         });
 
         const layout = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
+            ...boxLayoutOrientation(true),
             x_expand: true,
         });
 
