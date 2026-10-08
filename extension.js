@@ -1,6 +1,5 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
-import GObject from 'gi://GObject';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -26,7 +25,7 @@ const CLOSE_FADE_DURATION_MS = 180;
 const CLOSE_REFRESH_DELAY_MS = 220;
 
 const BOX_LAYOUT_HAS_ORIENTATION =
-    GObject.Object.find_property.call(St.BoxLayout, 'orientation') !== null;
+    St.BoxLayout.find_property('orientation') !== null;
 
 function boxLayoutOrientation(vertical) {
     if (BOX_LAYOUT_HAS_ORIENTATION) {
