@@ -147,6 +147,18 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         titleOverflowRow.activatable_widget = titleOverflowDropdown;
         previewGroup.add(titleOverflowRow);
 
+        const middleClickRow = new Adw.SwitchRow({
+            title: 'Middle-Click Closes Window',
+            subtitle: 'Close a window by middle-clicking its preview, like the Windows taskbar.',
+        });
+        settings.bind(
+            'middle-click-close',
+            middleClickRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        previewGroup.add(middleClickRow);
+
         const closeButtonRow = new Adw.SwitchRow({
             title: 'Show Close Button',
             subtitle: 'Show a close control on each window preview.',
