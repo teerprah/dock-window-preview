@@ -2,7 +2,8 @@
 # Dock Window Preview (GNOME 46/49/50/51)
 
 This GNOME Shell extension shows open-window previews when you hover a dock icon.
-Clicking a preview activates that window.
+Clicking a preview activates that window; middle-clicking a preview closes that
+window, like the Windows taskbar.
 
 ## Install locally
 
@@ -39,4 +40,5 @@ Direct script usage:
   - Preview thumbnail width/height
   - Title overflow behavior (truncate or wrap)
   - Optional per-window close button with left/right placement
+  - Middle-click on a preview to close the window (enabled by default)
 - The hover detector is tuned for dash/dock icons and uses the same app-window model as dock menu entries (including the "All Windows" behavior).

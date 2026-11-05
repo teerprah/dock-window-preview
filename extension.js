@@ -21,6 +21,7 @@ const DEFAULT_PREVIEW_HEIGHT = 160;
 const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
 const DEFAULT_SHOW_CLOSE_BUTTON = false;
 const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
+const DEFAULT_MIDDLE_CLICK_CLOSE = true;
 const CLOSE_FADE_DURATION_MS = 180;
 const CLOSE_REFRESH_DELAY_MS = 220;
 
@@ -76,6 +77,7 @@ class WindowPreviewPopup {
         this._titleOverflowMode = DEFAULT_TITLE_OVERFLOW_MODE;
         this._showCloseButton = DEFAULT_SHOW_CLOSE_BUTTON;
         this._closeButtonPosition = DEFAULT_CLOSE_BUTTON_POSITION;
+        this._middleClickClose = DEFAULT_MIDDLE_CLICK_CLOSE;
         this._refreshTimeoutId = 0;
 
         this._actor = new St.BoxLayout({
@@ -102,6 +104,7 @@ class WindowPreviewPopup {
         this._titleOverflowMode = config.titleOverflowMode === 'wrap' ? 'wrap' : 'truncate';
         this._showCloseButton = config.showCloseButton ?? DEFAULT_SHOW_CLOSE_BUTTON;
         this._closeButtonPosition = config.closeButtonPosition === 'left' ? 'left' : 'right';
+        this._middleClickClose = config.middleClickClose ?? DEFAULT_MIDDLE_CLICK_CLOSE;
     }
 
     containsActor(actor) {
@@ -193,12 +196,36 @@ class WindowPreviewPopup {
             Main.activateWindow(metaWindow);
         });
 
+        if (this._middleClickClose)
+            this._connectMiddleClick(button, item, metaWindow, app);
+
         item.add_child(button);
 
         if (this._showCloseButton)
             item.add_child(this._createCloseButtonRow(item, metaWindow, app));
 
         return item;
+    }
+
+    _connectMiddleClick(button, item, metaWindow, app) {
+        button.connect('button-press-event', (actor, event) => {
+            if (event.get_button() !== Clutter.BUTTON_MIDDLE)
+                return Clutter.EVENT_PROPAGATE;
+
+            this._closeWindow(item, metaWindow, app);
+            return Clutter.EVENT_STOP;
+        });
+    }
+
+    _closeWindow(item, metaWindow, app) {
+        this._animateWindowClose(item);
+
+        if (typeof metaWindow.delete === 'function')
+            metaWindow.delete(global.get_current_time());
+        else if (typeof app.request_quit === 'function')
+            app.request_quit();
+
+        this._queueRefresh();
     }
 
     _createCloseButtonRow(item, metaWindow, app) {
@@ -235,16 +262,8 @@ class WindowPreviewPopup {
             track_hover: true,
         });
         closeButton.set_child(closeIcon);
-        closeButton.connect('clicked', () => {
-            this._animateWindowClose(item);
-
-            if (typeof metaWindow.delete === 'function')
-                metaWindow.delete(global.get_current_time());
-            else if (typeof app.request_quit === 'function')
-                app.request_quit();
-
-            this._queueRefresh();
-        });
+        closeButton.connect('clicked', () =>
+            this._closeWindow(item, metaWindow, app));
 
         return closeButton;
     }
@@ -508,6 +527,10 @@ class DockHoverTracker {
                 DEFAULT_SHOW_CLOSE_BUTTON
             ),
             closeButtonPosition: this._readCloseButtonPositionSetting(),
+            middleClickClose: this._readBooleanSetting(
+                'middle-click-close',
+                DEFAULT_MIDDLE_CLICK_CLOSE
+            ),
         });
 
         this._cancelShow();

@@ -34,6 +34,11 @@
       <summary>Preview title overflow behavior</summary>
       <description>Whether long window titles are truncated with ellipsis or wrapped to the next line.</description>
     </key>
+    <key name="middle-click-close" type="b">
+      <default>true</default>
+      <summary>Middle-click closes window</summary>
+      <description>Whether middle-clicking a window preview closes that window.</description>
+    </key>
     <key name="show-close-button" type="b">
       <default>false</default>
       <summary>Show close button in previews</summary>
