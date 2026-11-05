@@ -82,23 +82,6 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         }));
         page.add(hoverGroup);
 
-        const windowBehaviorGroup = new Adw.PreferencesGroup({
-            title: 'Window Behavior',
-            description: 'Control how application windows use workspaces.',
-        });
-        const maximizeWorkspaceRow = new Adw.SwitchRow({
-            title: 'Maximize on New Workspace',
-            subtitle: 'Move maximized windows to a dedicated workspace and return them when restored.',
-        });
-        settings.bind(
-            'maximize-to-new-workspace',
-            maximizeWorkspaceRow,
-            'active',
-            Gio.SettingsBindFlags.DEFAULT
-        );
-        windowBehaviorGroup.add(maximizeWorkspaceRow);
-        page.add(windowBehaviorGroup);
-
         const previewGroup = new Adw.PreferencesGroup({
             title: 'Preview Appearance',
             description: 'Control preview layout and thumbnail size.',
@@ -208,6 +191,24 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         }));
 
         page.add(previewGroup);
+
+        const windowBehaviorGroup = new Adw.PreferencesGroup({
+            title: 'Window Behavior',
+            description: 'Control how application windows use workspaces.',
+        });
+        const maximizeWorkspaceRow = new Adw.SwitchRow({
+            title: 'Maximize on New Workspace',
+            subtitle: 'Move maximized windows to a dedicated workspace and return them when restored.',
+        });
+        settings.bind(
+            'maximize-to-new-workspace',
+            maximizeWorkspaceRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        windowBehaviorGroup.add(maximizeWorkspaceRow);
+        page.add(windowBehaviorGroup);
+
         window.add(page);
         window.set_default_size(620, 460);
     }
