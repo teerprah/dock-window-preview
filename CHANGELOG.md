@@ -2,7 +2,7 @@
 
 Notable changes to Dock Window Preview are documented here.
 
-## Unreleased
+## Under Review
 
 ## 7 - 2026-11-05
 
