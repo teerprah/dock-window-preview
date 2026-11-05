@@ -4,6 +4,8 @@
 This GNOME Shell extension shows open-window previews when you hover a dock icon.
 Clicking a preview activates that window.
 
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## Install locally
 
 1. Run:
