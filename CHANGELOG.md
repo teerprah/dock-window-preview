@@ -6,6 +6,8 @@ Notable changes to Dock Window Preview are documented here.
 
 ## 7 - 2026-11-05
 
+- Added an optional setting to close a window by middle-clicking its preview, contributed by [@plugo1](https://github.com/plugo1).
+- Reused the existing close animation and popup refresh behavior for middle-clicked previews.
 - Added an optional setting that moves maximized application windows to dedicated workspaces.
 - Return managed windows to their original workspaces when they are restored.
 - Restore managed windows when the setting or extension is disabled.

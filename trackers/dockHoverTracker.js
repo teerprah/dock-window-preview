@@ -11,6 +11,7 @@ const DEFAULT_PREVIEW_HEIGHT = 160;
 const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
 const DEFAULT_SHOW_CLOSE_BUTTON = false;
 const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
+const DEFAULT_MIDDLE_CLICK_CLOSE = true;
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -102,6 +103,10 @@ export default class DockHoverTracker {
                 DEFAULT_SHOW_CLOSE_BUTTON
             ),
             closeButtonPosition: this._readCloseButtonPositionSetting(),
+            middleClickClose: this._readBooleanSetting(
+                'middle-click-close',
+                DEFAULT_MIDDLE_CLICK_CLOSE
+            ),
         });
 
         this._cancelShow();
