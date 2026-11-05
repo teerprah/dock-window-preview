@@ -53,5 +53,10 @@
       <summary>Close button position</summary>
       <description>Whether the preview close button is shown on the left or right side of the preview card.</description>
     </key>
+    <key name="maximize-to-new-workspace" type="b">
+      <default>false</default>
+      <summary>Maximize windows on a new workspace</summary>
+      <description>Whether maximized application windows are moved to a dedicated workspace and returned when restored.</description>
+    </key>
   </schema>
 </schemalist>
