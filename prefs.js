@@ -3,8 +3,6 @@ import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const SCHEMA_ID = 'org.gnome.shell.extensions.dock-window-preview';
-
 function createSpinRow({title, subtitle, settings, key, min, max, step}) {
     const row = new Adw.ActionRow({title, subtitle});
 
@@ -55,12 +53,12 @@ function createSelectionRow({title, subtitle, settings, key, options}) {
     row.add_suffix(dropdown);
     row.activatable_widget = dropdown;
 
-    return {row, dropdown};
+    return row;
 }
 
 export default class DockWindowPreviewPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        const settings = this.getSettings(SCHEMA_ID);
+        const settings = this.getSettings();
 
         const page = new Adw.PreferencesPage({
             title: 'Dock Preview',
@@ -87,64 +85,28 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             description: 'Control preview layout and thumbnail size.',
         });
 
-        const layoutRow = new Adw.ActionRow({
+        const layoutRow = createSelectionRow({
             title: 'Preview Layout',
             subtitle: 'Choose vertical stack or horizontal strip.',
+            settings,
+            key: 'preview-layout',
+            options: [
+                {label: 'Vertical stack', value: 'vertical'},
+                {label: 'Horizontal strip', value: 'horizontal'},
+            ],
         });
-
-        const layoutModel = Gtk.StringList.new([
-            'Vertical stack',
-            'Horizontal strip',
-        ]);
-        const layoutDropdown = new Gtk.DropDown({
-            model: layoutModel,
-            selected: settings.get_string('preview-layout') === 'horizontal' ? 1 : 0,
-            valign: Gtk.Align.CENTER,
-        });
-
-        layoutDropdown.connect('notify::selected', () => {
-            const layout = layoutDropdown.selected === 1 ? 'horizontal' : 'vertical';
-            settings.set_string('preview-layout', layout);
-        });
-
-        settings.connect('changed::preview-layout', () => {
-            const selected = settings.get_string('preview-layout') === 'horizontal' ? 1 : 0;
-            if (layoutDropdown.selected !== selected)
-                layoutDropdown.selected = selected;
-        });
-
-        layoutRow.add_suffix(layoutDropdown);
-        layoutRow.activatable_widget = layoutDropdown;
         previewGroup.add(layoutRow);
 
-        const titleOverflowRow = new Adw.ActionRow({
+        const titleOverflowRow = createSelectionRow({
             title: 'Title Overflow',
             subtitle: 'Choose whether long titles truncate or wrap.',
+            settings,
+            key: 'title-overflow-mode',
+            options: [
+                {label: 'Truncate with ellipsis', value: 'truncate'},
+                {label: 'Wrap to next line', value: 'wrap'},
+            ],
         });
-
-        const titleOverflowModel = Gtk.StringList.new([
-            'Truncate with ellipsis',
-            'Wrap to next line',
-        ]);
-        const titleOverflowDropdown = new Gtk.DropDown({
-            model: titleOverflowModel,
-            selected: settings.get_string('title-overflow-mode') === 'wrap' ? 1 : 0,
-            valign: Gtk.Align.CENTER,
-        });
-
-        titleOverflowDropdown.connect('notify::selected', () => {
-            const mode = titleOverflowDropdown.selected === 1 ? 'wrap' : 'truncate';
-            settings.set_string('title-overflow-mode', mode);
-        });
-
-        settings.connect('changed::title-overflow-mode', () => {
-            const selected = settings.get_string('title-overflow-mode') === 'wrap' ? 1 : 0;
-            if (titleOverflowDropdown.selected !== selected)
-                titleOverflowDropdown.selected = selected;
-        });
-
-        titleOverflowRow.add_suffix(titleOverflowDropdown);
-        titleOverflowRow.activatable_widget = titleOverflowDropdown;
         previewGroup.add(titleOverflowRow);
 
         const middleClickRow = new Adw.SwitchRow({
@@ -166,7 +128,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         settings.bind('show-close-button', closeButtonRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         previewGroup.add(closeButtonRow);
 
-        const {row: closeButtonPositionRow} = createSelectionRow({
+        const closeButtonPositionRow = createSelectionRow({
             title: 'Close Button Position',
             subtitle: 'Choose which side of the preview card shows the close control.',
             settings,

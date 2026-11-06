@@ -7,10 +7,11 @@ ZIP_FILE := $(DIST_DIR)/$(UUID).zip
 SCHEMA_DIR := schemas
 SCHEMA_XML := $(SCHEMA_DIR)/org.gnome.shell.extensions.dock-window-preview.gschema.xml
 SCHEMA_COMPILED := $(SCHEMA_DIR)/gschemas.compiled
-TRACKER_FILES := trackers/dockHoverTracker.js trackers/maximizeWorkspaceTracker.js
-SOURCE_FILES := extension.js windowPreviewPopup.js $(TRACKER_FILES)
-INSTALL_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js README.md $(SCHEMA_XML)
-ZIP_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js README.md "$(SCHEMA_DIR)"
+TRACKER_FILES := trackers/dockHoverTracker.js
+UTILITY_FILES := utils/windows.js
+SOURCE_FILES := extension.js windowPreviewPopup.js $(TRACKER_FILES) $(UTILITY_FILES)
+INSTALL_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js $(SCHEMA_XML)
+ZIP_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js LICENSE "$(SCHEMA_DIR)"
 
 .PHONY: install zip uninstall clean
 
@@ -19,8 +20,9 @@ install: $(INSTALL_FILES)
 	@install -m 644 metadata.json "$(INSTALL_DIR)/metadata.json"
 	@install -m 644 extension.js "$(INSTALL_DIR)/extension.js"
 	@install -m 644 windowPreviewPopup.js "$(INSTALL_DIR)/windowPreviewPopup.js"
-	@mkdir -p "$(INSTALL_DIR)/trackers"
+	@mkdir -p "$(INSTALL_DIR)/trackers" "$(INSTALL_DIR)/utils"
 	@install -m 644 $(TRACKER_FILES) "$(INSTALL_DIR)/trackers/"
+	@install -m 644 $(UTILITY_FILES) "$(INSTALL_DIR)/utils/"
 	@install -m 644 stylesheet.css "$(INSTALL_DIR)/stylesheet.css"
 	@install -m 644 prefs.js "$(INSTALL_DIR)/prefs.js"
 	@if [[ -d "$(SCHEMA_DIR)" ]]; then mkdir -p "$(INSTALL_DIR)/$(SCHEMA_DIR)" && cp -R "$(SCHEMA_DIR)"/. "$(INSTALL_DIR)/$(SCHEMA_DIR)/"; fi

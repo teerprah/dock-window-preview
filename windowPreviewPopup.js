@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {getVisibleAppWindows} from './utils/windows.js';
 
 const POPUP_GAP = 12;
 const POPUP_MARGIN = 8;
@@ -27,27 +28,11 @@ function boxLayoutOrientation(vertical) {
                 : Clutter.Orientation.HORIZONTAL,
         };
     }
-
     return {vertical};
 }
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
-}
-
-function getVisibleAppWindows(app) {
-    if (!app || typeof app.get_windows !== 'function')
-        return [];
-
-    return app.get_windows().filter(window => {
-        if (!window)
-            return false;
-
-        if (typeof window.is_skip_taskbar === 'function')
-            return !window.is_skip_taskbar();
-
-        return !window.skip_taskbar;
-    });
 }
 
 export default class WindowPreviewPopup {
@@ -85,9 +70,9 @@ export default class WindowPreviewPopup {
         this._previewWidth = clamp(config.previewWidth, 120, 640);
         this._previewHeight = clamp(config.previewHeight, 80, 480);
         this._titleOverflowMode = config.titleOverflowMode === 'wrap' ? 'wrap' : 'truncate';
-        this._showCloseButton = config.showCloseButton ?? DEFAULT_SHOW_CLOSE_BUTTON;
+        this._showCloseButton = config.showCloseButton;
         this._closeButtonPosition = config.closeButtonPosition === 'left' ? 'left' : 'right';
-        this._middleClickClose = config.middleClickClose ?? DEFAULT_MIDDLE_CLICK_CLOSE;
+        this._middleClickClose = config.middleClickClose;
     }
 
     containsActor(actor) {
@@ -180,38 +165,32 @@ export default class WindowPreviewPopup {
         });
 
         if (this._middleClickClose)
-            this._connectMiddleClick(button, item, metaWindow, app);
+            this._connectMiddleClick(button, item, metaWindow);
 
         item.add_child(button);
 
         if (this._showCloseButton)
-            item.add_child(this._createCloseButtonRow(item, metaWindow, app));
+            item.add_child(this._createCloseButtonRow(item, metaWindow));
 
         return item;
     }
 
-    _connectMiddleClick(button, item, metaWindow, app) {
+    _connectMiddleClick(button, item, metaWindow) {
         button.connect('button-press-event', (_actor, event) => {
             if (event.get_button() !== Clutter.BUTTON_MIDDLE)
                 return Clutter.EVENT_PROPAGATE;
-
-            this._closeWindow(item, metaWindow, app);
+            this._closeWindow(item, metaWindow);
             return Clutter.EVENT_STOP;
         });
     }
 
-    _closeWindow(item, metaWindow, app) {
+    _closeWindow(item, metaWindow) {
         this._animateWindowClose(item);
-
-        if (typeof metaWindow.delete === 'function')
-            metaWindow.delete(global.get_current_time());
-        else if (typeof app.request_quit === 'function')
-            app.request_quit();
-
+        metaWindow.delete(global.get_current_time());
         this._queueRefresh();
     }
 
-    _createCloseButtonRow(item, metaWindow, app) {
+    _createCloseButtonRow(item, metaWindow) {
         const row = new St.BoxLayout({
             style_class: 'dock-preview-item-controls',
             x_expand: true,
@@ -220,7 +199,7 @@ export default class WindowPreviewPopup {
             y_align: Clutter.ActorAlign.START,
         });
         const spacer = new St.Widget({x_expand: true});
-        const closeButton = this._createCloseButton(item, metaWindow, app);
+        const closeButton = this._createCloseButton(item, metaWindow);
 
         if (this._closeButtonPosition === 'left') {
             row.add_child(closeButton);
@@ -233,7 +212,7 @@ export default class WindowPreviewPopup {
         return row;
     }
 
-    _createCloseButton(item, metaWindow, app) {
+    _createCloseButton(item, metaWindow) {
         const closeIcon = new St.Icon({
             icon_name: 'window-close-symbolic',
             style_class: 'dock-preview-close-icon',
@@ -245,8 +224,7 @@ export default class WindowPreviewPopup {
             track_hover: true,
         });
         closeButton.set_child(closeIcon);
-        closeButton.connect('clicked', () =>
-            this._closeWindow(item, metaWindow, app));
+        closeButton.connect('clicked', () => this._closeWindow(item, metaWindow));
 
         return closeButton;
     }
@@ -263,9 +241,6 @@ export default class WindowPreviewPopup {
         titleLabel.set_style(`max-width: ${this._previewWidth}px;`);
 
         const textActor = titleLabel.clutter_text;
-        if (!textActor)
-            return titleLabel;
-
         if (this._titleOverflowMode === 'wrap') {
             textActor.single_line_mode = false;
             textActor.line_wrap = true;
@@ -308,17 +283,7 @@ export default class WindowPreviewPopup {
                 y_align: Clutter.ActorAlign.CENTER,
             }));
         } else {
-            let icon = null;
-            if (typeof app.create_icon_texture === 'function')
-                icon = app.create_icon_texture(72);
-
-            if (!icon) {
-                icon = new St.Icon({
-                    icon_name: 'application-x-executable-symbolic',
-                    icon_size: 72,
-                });
-            }
-
+            const icon = app.create_icon_texture(72);
             icon.x_align = Clutter.ActorAlign.CENTER;
             icon.y_align = Clutter.ActorAlign.CENTER;
             thumbnail.add_child(icon);
@@ -328,14 +293,9 @@ export default class WindowPreviewPopup {
     }
 
     _positionNearSource() {
-        if (!this._sourceActor)
-            return;
-
         const monitor =
             Main.layoutManager.findMonitorForActor(this._sourceActor) ??
             Main.layoutManager.primaryMonitor;
-        if (!monitor)
-            return;
 
         const [sourceX, sourceY] = this._sourceActor.get_transformed_position();
         const [sourceWidth, sourceHeight] = this._sourceActor.get_transformed_size();
@@ -419,9 +379,6 @@ export default class WindowPreviewPopup {
     }
 
     _animateWindowClose(item) {
-        if (!item)
-            return;
-
         item.reactive = false;
         item.can_focus = false;
         item.ease({

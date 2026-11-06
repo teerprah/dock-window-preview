@@ -1,26 +1,16 @@
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import WindowPreviewPopup from '../windowPreviewPopup.js';
+import {filterVisibleWindows} from '../utils/windows.js';
 
 const HIDE_DELAY_MS = 240;
 const POINTER_POLL_MS = 90;
-const DEFAULT_HOVER_DELAY_MS = 180;
-const DEFAULT_PREVIEW_LAYOUT = 'vertical';
-const DEFAULT_PREVIEW_WIDTH = 260;
-const DEFAULT_PREVIEW_HEIGHT = 160;
-const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
-const DEFAULT_SHOW_CLOSE_BUTTON = false;
-const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
-const DEFAULT_MIDDLE_CLICK_CLOSE = true;
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
 
 function hasStyleClass(actor, className) {
-    if (!actor || typeof actor.get_style_class_name !== 'function')
-        return false;
-
     const style = actor.get_style_class_name();
     return typeof style === 'string' && style.split(/\s+/).includes(className);
 }
@@ -29,7 +19,6 @@ export default class DockHoverTracker {
     constructor(settings) {
         this._settings = settings;
         this._settingsChangedId = 0;
-        this._hoverDelayMs = DEFAULT_HOVER_DELAY_MS;
 
         this._popup = new WindowPreviewPopup();
         this._hoveredIcon = null;
@@ -38,8 +27,7 @@ export default class DockHoverTracker {
         this._showTimeoutId = 0;
         this._hideTimeoutId = 0;
 
-        if (this._settings)
-            this._settingsChangedId = this._settings.connect('changed', () => this._syncSettings());
+        this._settingsChangedId = this._settings.connect('changed', () => this._syncSettings());
 
         this._syncSettings();
     }
@@ -60,7 +48,7 @@ export default class DockHoverTracker {
             this._pollId = 0;
         }
 
-        if (this._settingsChangedId && this._settings) {
+        if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;
         }
@@ -73,102 +61,20 @@ export default class DockHoverTracker {
     }
 
     _syncSettings() {
-        const hoverDelay = this._readIntSetting(
-            'hover-delay-ms',
-            50,
-            5000,
-            DEFAULT_HOVER_DELAY_MS
-        );
-        const previewWidth = this._readIntSetting(
-            'preview-width',
-            120,
-            640,
-            DEFAULT_PREVIEW_WIDTH
-        );
-        const previewHeight = this._readIntSetting(
-            'preview-height',
-            80,
-            480,
-            DEFAULT_PREVIEW_HEIGHT
-        );
-
-        this._hoverDelayMs = hoverDelay;
+        this._hoverDelayMs = clamp(this._settings.get_int('hover-delay-ms'), 50, 5000);
         this._popup.updateConfig({
-            previewLayout: this._readLayoutSetting(),
-            previewWidth,
-            previewHeight,
-            titleOverflowMode: this._readTitleOverflowSetting(),
-            showCloseButton: this._readBooleanSetting(
-                'show-close-button',
-                DEFAULT_SHOW_CLOSE_BUTTON
-            ),
-            closeButtonPosition: this._readCloseButtonPositionSetting(),
-            middleClickClose: this._readBooleanSetting(
-                'middle-click-close',
-                DEFAULT_MIDDLE_CLICK_CLOSE
-            ),
+            previewLayout: this._settings.get_string('preview-layout'),
+            previewWidth: this._settings.get_int('preview-width'),
+            previewHeight: this._settings.get_int('preview-height'),
+            titleOverflowMode: this._settings.get_string('title-overflow-mode'),
+            showCloseButton: this._settings.get_boolean('show-close-button'),
+            closeButtonPosition: this._settings.get_string('close-button-position'),
+            middleClickClose: this._settings.get_boolean('middle-click-close'),
         });
 
         this._cancelShow();
         this._cancelHide();
         this._popup.hide();
-    }
-
-    _readIntSetting(key, min, max, fallback) {
-        if (!this._settings)
-            return fallback;
-
-        try {
-            return clamp(this._settings.get_int(key), min, max);
-        } catch (error) {
-            return fallback;
-        }
-    }
-
-    _readLayoutSetting() {
-        if (!this._settings)
-            return DEFAULT_PREVIEW_LAYOUT;
-
-        try {
-            return this._settings.get_string('preview-layout');
-        } catch (error) {
-            return DEFAULT_PREVIEW_LAYOUT;
-        }
-    }
-
-    _readBooleanSetting(key, fallback) {
-        if (!this._settings)
-            return fallback;
-
-        try {
-            return this._settings.get_boolean(key);
-        } catch (error) {
-            return fallback;
-        }
-    }
-
-    _readTitleOverflowSetting() {
-        if (!this._settings)
-            return DEFAULT_TITLE_OVERFLOW_MODE;
-
-        try {
-            const value = this._settings.get_string('title-overflow-mode');
-            return value === 'wrap' ? 'wrap' : 'truncate';
-        } catch (error) {
-            return DEFAULT_TITLE_OVERFLOW_MODE;
-        }
-    }
-
-    _readCloseButtonPositionSetting() {
-        if (!this._settings)
-            return DEFAULT_CLOSE_BUTTON_POSITION;
-
-        try {
-            const value = this._settings.get_string('close-button-position');
-            return value === 'left' ? 'left' : 'right';
-        } catch (error) {
-            return DEFAULT_CLOSE_BUTTON_POSITION;
-        }
     }
 
     _pollPointer() {
@@ -225,14 +131,7 @@ export default class DockHoverTracker {
     }
 
     _isDockAppIcon(delegate) {
-        if (!delegate || !delegate.app)
-            return false;
-
-        const hasWindowSource =
-            typeof delegate.getInterestingWindows === 'function' ||
-            typeof delegate.app?.get_windows === 'function';
-
-        return hasWindowSource;
+        return Boolean(delegate && delegate.app);
     }
 
     _isInsideDash(actor) {
@@ -309,27 +208,10 @@ export default class DockHoverTracker {
         if (typeof icon.getInterestingWindows === 'function')
             windows = icon.getInterestingWindows();
 
-        if (windows.length === 0 && typeof icon.app?.get_windows === 'function')
+        if (windows.length === 0)
             windows = icon.app.get_windows();
 
-        return windows
-            .filter(window => {
-                if (!window)
-                    return false;
-
-                if (typeof window.is_skip_taskbar === 'function')
-                    return !window.is_skip_taskbar();
-
-                return !window.skip_taskbar;
-            })
-            .sort((left, right) => {
-                const leftTime = typeof left.get_user_time === 'function'
-                    ? left.get_user_time()
-                    : 0;
-                const rightTime = typeof right.get_user_time === 'function'
-                    ? right.get_user_time()
-                    : 0;
-                return rightTime - leftTime;
-            });
+        return filterVisibleWindows(windows)
+            .sort((left, right) => right.get_user_time() - left.get_user_time());
     }
 }
