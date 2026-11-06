@@ -12,6 +12,12 @@ const DEFAULT_TITLE_OVERFLOW_MODE = 'truncate';
 const DEFAULT_SHOW_CLOSE_BUTTON = false;
 const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
 const DEFAULT_MIDDLE_CLICK_CLOSE = true;
+const DEFAULT_POPUP_FADE_DURATION_MS = 150;
+const DEFAULT_ENRICHED_PREVIEW_ENABLED = true;
+const DEFAULT_ENRICHED_PREVIEW_DELAY_MS = 120;
+const DEFAULT_ENRICHED_PREVIEW_FADE_DURATION_MS = 240;
+const DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT = 85;
+const DEFAULT_PEEK_ENABLED = false;
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -20,7 +26,6 @@ function clamp(value, min, max) {
 function hasStyleClass(actor, className) {
     if (!actor || typeof actor.get_style_class_name !== 'function')
         return false;
-
     const style = actor.get_style_class_name();
     return typeof style === 'string' && style.split(/\s+/).includes(className);
 }
@@ -91,6 +96,38 @@ export default class DockHoverTracker {
             480,
             DEFAULT_PREVIEW_HEIGHT
         );
+        const popupFadeDurationMs = this._readIntSetting(
+            'popup-fade-duration-ms',
+            0,
+            1000,
+            DEFAULT_POPUP_FADE_DURATION_MS
+        );
+        const enrichedPreviewEnabled = this._readBooleanSetting(
+            'enriched-preview-enabled',
+            DEFAULT_ENRICHED_PREVIEW_ENABLED
+        );
+        const enrichedPreviewDelayMs = this._readIntSetting(
+            'enriched-preview-delay-ms',
+            100,
+            3000,
+            DEFAULT_ENRICHED_PREVIEW_DELAY_MS
+        );
+        const enrichedPreviewFadeDurationMs = this._readIntSetting(
+            'enriched-preview-fade-duration-ms',
+            0,
+            1000,
+            DEFAULT_ENRICHED_PREVIEW_FADE_DURATION_MS
+        );
+        const enrichedPreviewSizePercent = this._readIntSetting(
+            'enriched-preview-size-percent',
+            40,
+            95,
+            DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT
+        );
+        const peekEnabled = this._readBooleanSetting(
+            'peek-enabled',
+            DEFAULT_PEEK_ENABLED
+        );
 
         this._hoverDelayMs = hoverDelay;
         this._popup.updateConfig({
@@ -107,6 +144,12 @@ export default class DockHoverTracker {
                 'middle-click-close',
                 DEFAULT_MIDDLE_CLICK_CLOSE
             ),
+            popupFadeDurationMs,
+            enrichedPreviewEnabled,
+            enrichedPreviewDelayMs,
+            enrichedPreviewFadeDurationMs,
+            enrichedPreviewSizePercent,
+            peekEnabled,
         });
 
         this._cancelShow();
@@ -117,7 +160,6 @@ export default class DockHoverTracker {
     _readIntSetting(key, min, max, fallback) {
         if (!this._settings)
             return fallback;
-
         try {
             return clamp(this._settings.get_int(key), min, max);
         } catch (error) {
@@ -128,7 +170,6 @@ export default class DockHoverTracker {
     _readLayoutSetting() {
         if (!this._settings)
             return DEFAULT_PREVIEW_LAYOUT;
-
         try {
             return this._settings.get_string('preview-layout');
         } catch (error) {
@@ -139,7 +180,6 @@ export default class DockHoverTracker {
     _readBooleanSetting(key, fallback) {
         if (!this._settings)
             return fallback;
-
         try {
             return this._settings.get_boolean(key);
         } catch (error) {
@@ -150,7 +190,6 @@ export default class DockHoverTracker {
     _readTitleOverflowSetting() {
         if (!this._settings)
             return DEFAULT_TITLE_OVERFLOW_MODE;
-
         try {
             const value = this._settings.get_string('title-overflow-mode');
             return value === 'wrap' ? 'wrap' : 'truncate';
@@ -162,7 +201,6 @@ export default class DockHoverTracker {
     _readCloseButtonPositionSetting() {
         if (!this._settings)
             return DEFAULT_CLOSE_BUTTON_POSITION;
-
         try {
             const value = this._settings.get_string('close-button-position');
             return value === 'left' ? 'left' : 'right';
@@ -220,18 +258,15 @@ export default class DockHoverTracker {
                 actor: this._getIconActor(delegate, current),
             };
         }
-
         return null;
     }
 
     _isDockAppIcon(delegate) {
         if (!delegate || !delegate.app)
             return false;
-
         const hasWindowSource =
             typeof delegate.getInterestingWindows === 'function' ||
             typeof delegate.app?.get_windows === 'function';
-
         return hasWindowSource;
     }
 
@@ -242,17 +277,14 @@ export default class DockHoverTracker {
                 hasStyleClass(current, 'dash'))
                 return true;
         }
-
         return false;
     }
 
     _getIconActor(icon, fallbackActor) {
         if (icon instanceof Clutter.Actor)
             return icon;
-
         if (icon.actor instanceof Clutter.Actor)
             return icon.actor;
-
         return fallbackActor;
     }
 
@@ -291,7 +323,6 @@ export default class DockHoverTracker {
     _cancelShow() {
         if (!this._showTimeoutId)
             return;
-
         GLib.source_remove(this._showTimeoutId);
         this._showTimeoutId = 0;
     }
@@ -299,7 +330,6 @@ export default class DockHoverTracker {
     _cancelHide() {
         if (!this._hideTimeoutId)
             return;
-
         GLib.source_remove(this._hideTimeoutId);
         this._hideTimeoutId = 0;
     }
@@ -308,7 +338,6 @@ export default class DockHoverTracker {
         let windows = [];
         if (typeof icon.getInterestingWindows === 'function')
             windows = icon.getInterestingWindows();
-
         if (windows.length === 0 && typeof icon.app?.get_windows === 'function')
             windows = icon.app.get_windows();
 
@@ -316,10 +345,8 @@ export default class DockHoverTracker {
             .filter(window => {
                 if (!window)
                     return false;
-
                 if (typeof window.is_skip_taskbar === 'function')
                     return !window.is_skip_taskbar();
-
                 return !window.skip_taskbar;
             })
             .sort((left, right) => {

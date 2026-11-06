@@ -82,6 +82,88 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         }));
         page.add(hoverGroup);
 
+        const animationGroup = new Adw.PreferencesGroup({
+            title: 'Animations',
+            description: 'Control fade animations for previews.',
+        });
+        animationGroup.add(createSpinRow({
+            title: 'Popup Fade Duration',
+            subtitle: 'Fade-in/out animation duration for the main preview popup (ms).',
+            settings,
+            key: 'popup-fade-duration-ms',
+            min: 0,
+            max: 1000,
+            step: 10,
+        }));
+
+        const enrichedGroup = new Adw.PreferencesGroup({
+            title: 'Enriched Preview',
+            description: 'Show an overview-style window preview on item hover.',
+        });
+        const enrichedEnabledRow = new Adw.SwitchRow({
+            title: 'Enable Enriched Preview',
+            subtitle: 'Show a larger centered preview when hovering a window item.',
+        });
+        settings.bind('enriched-preview-enabled', enrichedEnabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        enrichedGroup.add(enrichedEnabledRow);
+
+        const enrichedOptionRows = [];
+
+        enrichedOptionRows.push(createSpinRow({
+            title: 'Enriched Preview Delay',
+            subtitle: 'Hover delay before enriched preview appears (milliseconds).',
+            settings,
+            key: 'enriched-preview-delay-ms',
+            min: 100,
+            max: 3000,
+            step: 10,
+        }));
+
+        enrichedOptionRows.push(createSpinRow({
+            title: 'Enriched Preview Fade Duration',
+            subtitle: 'Fade-in/out animation duration for enriched preview (ms).',
+            settings,
+            key: 'enriched-preview-fade-duration-ms',
+            min: 0,
+            max: 1000,
+            step: 10,
+        }));
+
+        enrichedOptionRows.push(createSpinRow({
+            title: 'Enriched Preview Size',
+            subtitle: 'Maximum share of the monitor used by the centered preview (percent).',
+            settings,
+            key: 'enriched-preview-size-percent',
+            min: 40,
+            max: 95,
+            step: 5,
+        }));
+
+        const syncEnrichedSensitivity = () => {
+            const enabled = settings.get_boolean('enriched-preview-enabled');
+            for (const row of enrichedOptionRows)
+                row.sensitive = enabled;
+        };
+        syncEnrichedSensitivity();
+        settings.connect('changed::enriched-preview-enabled', syncEnrichedSensitivity);
+        for (const row of enrichedOptionRows)
+            enrichedGroup.add(row);
+
+        const peekGroup = new Adw.PreferencesGroup({
+            title: 'Peek',
+            description: 'Focus the hovered window on the desktop.',
+        });
+        const peekEnabledRow = new Adw.SwitchRow({
+            title: 'Enable Peek',
+            subtitle: 'Fade other windows while hovering a window preview.',
+        });
+        settings.bind('peek-enabled', peekEnabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        peekGroup.add(peekEnabledRow);
+
+        page.add(enrichedGroup);
+        page.add(peekGroup);
+        page.add(animationGroup);
+
         const previewGroup = new Adw.PreferencesGroup({
             title: 'Preview Appearance',
             description: 'Control preview layout and thumbnail size.',
@@ -222,6 +304,6 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
         page.add(windowBehaviorGroup);
 
         window.add(page);
-        window.set_default_size(620, 460);
+        window.set_default_size(640, 580);
     }
 }

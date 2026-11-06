@@ -43,5 +43,8 @@ Direct script usage:
   - Title overflow behavior (truncate or wrap)
   - Optional per-window close button with left/right placement
   - Middle-click on a preview to close the window (enabled by default)
+  - Optional centered overview-style preview with configurable delay, size, and animation duration
+  - Optional Peek effect that fades other windows while hovering a preview
+  - Preview popup animation duration
   - Optional macOS-style dedicated workspace for maximized windows
 - The hover detector is tuned for dash/dock icons and uses the same app-window model as dock menu entries (including the "All Windows" behavior).
