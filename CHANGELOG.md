@@ -8,6 +8,7 @@ Notable changes to Dock Window Preview are documented here.
 
 - Added an optional setting to close a window by middle-clicking its preview, contributed by [@plugo1](https://github.com/plugo1).
 - Reused the existing close animation and popup refresh behavior for middle-clicked previews.
+- Split the preview UI and hover tracking into focused modules and removed redundant compatibility wrappers.
 
 ## 6 - 2026-10-08
 
