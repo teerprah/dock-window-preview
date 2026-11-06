@@ -1,8 +1,6 @@
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 
-const DEFAULT_MAXIMIZE_TO_NEW_WORKSPACE = false;
-
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
@@ -10,7 +8,7 @@ function clamp(value, min, max) {
 export default class MaximizeWorkspaceTracker {
     constructor(settings) {
         this._settings = settings;
-        this._enabled = this._readEnabled();
+        this._enabled = this._settings.get_boolean('maximize-to-new-workspace');
         this._settingsChangedId = 0;
         this._windowCreatedId = 0;
         this._windowSignals = new Map();
@@ -18,12 +16,10 @@ export default class MaximizeWorkspaceTracker {
         this._pendingChecks = new Map();
         this._cleanupSourceIds = new Set();
 
-        if (this._settings) {
-            this._settingsChangedId = this._settings.connect(
-                'changed::maximize-to-new-workspace',
-                () => this._syncEnabled()
-            );
-        }
+        this._settingsChangedId = this._settings.connect(
+            'changed::maximize-to-new-workspace',
+            () => this._syncEnabled()
+        );
     }
 
     enable() {
@@ -37,7 +33,7 @@ export default class MaximizeWorkspaceTracker {
     }
 
     destroy() {
-        if (this._settingsChangedId && this._settings) {
+        if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;
         }
@@ -47,19 +43,6 @@ export default class MaximizeWorkspaceTracker {
             this._windowCreatedId = 0;
         }
 
-        this._restoreAllWindows(false);
-
-        for (const [metaWindow, signalIds] of this._windowSignals) {
-            for (const signalId of signalIds) {
-                try {
-                    metaWindow.disconnect(signalId);
-                } catch (error) {
-                    // The window may already be unmanaged.
-                }
-            }
-        }
-        this._windowSignals.clear();
-
         for (const sourceId of this._pendingChecks.values())
             GLib.source_remove(sourceId);
         this._pendingChecks.clear();
@@ -68,22 +51,17 @@ export default class MaximizeWorkspaceTracker {
             GLib.source_remove(sourceId);
         this._cleanupSourceIds.clear();
 
+        for (const [metaWindow, signalIds] of this._windowSignals)
+            for (const signalId of signalIds)
+                metaWindow.disconnect(signalId);
+        this._windowSignals.clear();
+
+        this._restoreAllWindows(false);
         this._settings = null;
     }
 
-    _readEnabled() {
-        if (!this._settings)
-            return DEFAULT_MAXIMIZE_TO_NEW_WORKSPACE;
-
-        try {
-            return this._settings.get_boolean('maximize-to-new-workspace');
-        } catch (error) {
-            return DEFAULT_MAXIMIZE_TO_NEW_WORKSPACE;
-        }
-    }
-
     _syncEnabled() {
-        this._enabled = this._readEnabled();
+        this._enabled = this._settings.get_boolean('maximize-to-new-workspace');
         if (!this._enabled)
             this._restoreAllWindows(false);
     }
@@ -92,30 +70,21 @@ export default class MaximizeWorkspaceTracker {
         if (!metaWindow || this._windowSignals.has(metaWindow))
             return;
 
-        const signalIds = [];
-        try {
-            signalIds.push(metaWindow.connect(
+        const signalIds = [
+            metaWindow.connect(
                 'notify::maximized-horizontally',
                 () => this._queueWindowCheck(metaWindow)
-            ));
-            signalIds.push(metaWindow.connect(
+            ),
+            metaWindow.connect(
                 'notify::maximized-vertically',
                 () => this._queueWindowCheck(metaWindow)
-            ));
-            signalIds.push(metaWindow.connect(
+            ),
+            metaWindow.connect(
                 'unmanaged',
                 () => this._windowUnmanaged(metaWindow)
-            ));
-            this._windowSignals.set(metaWindow, signalIds);
-        } catch (error) {
-            for (const signalId of signalIds) {
-                try {
-                    metaWindow.disconnect(signalId);
-                } catch (disconnectError) {
-                    // The window may already be unmanaged.
-                }
-            }
-        }
+            ),
+        ];
+        this._windowSignals.set(metaWindow, signalIds);
     }
 
     _windowUnmanaged(metaWindow) {
@@ -183,24 +152,15 @@ export default class MaximizeWorkspaceTracker {
             return;
 
         const timestamp = global.get_current_time();
-        let dedicatedWorkspace = null;
+        const dedicatedWorkspace = workspaceManager.append_new_workspace(false, timestamp);
+        this._windowStates.set(metaWindow, {
+            originalWorkspace,
+            originalWorkspaceIndex: originalWorkspace.index(),
+            dedicatedWorkspace,
+        });
 
-        try {
-            dedicatedWorkspace = workspaceManager.append_new_workspace(false, timestamp);
-            this._windowStates.set(metaWindow, {
-                originalWorkspace,
-                originalWorkspaceIndex: originalWorkspace.index(),
-                dedicatedWorkspace,
-            });
-
-            metaWindow.change_workspace(dedicatedWorkspace);
-            dedicatedWorkspace.activate_with_focus(metaWindow, timestamp);
-        } catch (error) {
-            this._windowStates.delete(metaWindow);
-            if (dedicatedWorkspace)
-                this._removeWorkspaceIfEmpty(dedicatedWorkspace);
-            console.error(`[dock-window-preview] Failed to move maximized window: ${error}`);
-        }
+        metaWindow.change_workspace(dedicatedWorkspace);
+        dedicatedWorkspace.activate_with_focus(metaWindow, timestamp);
     }
 
     _restoreAllWindows(activate) {
@@ -211,15 +171,11 @@ export default class MaximizeWorkspaceTracker {
     _restoreWindow(metaWindow, state, activate) {
         this._windowStates.delete(metaWindow);
 
-        try {
-            const targetWorkspace = this._resolveOriginalWorkspace(state);
-            if (targetWorkspace && targetWorkspace !== state.dedicatedWorkspace) {
-                metaWindow.change_workspace(targetWorkspace);
-                if (activate)
-                    targetWorkspace.activate_with_focus(metaWindow, global.get_current_time());
-            }
-        } catch (error) {
-            console.error(`[dock-window-preview] Failed to restore window workspace: ${error}`);
+        const targetWorkspace = this._resolveOriginalWorkspace(state);
+        if (targetWorkspace && targetWorkspace !== state.dedicatedWorkspace) {
+            metaWindow.change_workspace(targetWorkspace);
+            if (activate)
+                targetWorkspace.activate_with_focus(metaWindow, global.get_current_time());
         }
 
         this._removeWorkspaceIfEmpty(state.dedicatedWorkspace);
@@ -242,9 +198,10 @@ export default class MaximizeWorkspaceTracker {
         if (!workspace)
             return false;
 
+        // Mutter may dispose a stored dynamic workspace before the window is restored.
         try {
             return workspace.index() >= 0;
-        } catch (error) {
+        } catch {
             return false;
         }
     }
@@ -266,8 +223,7 @@ export default class MaximizeWorkspaceTracker {
         // Mutter removes empty dynamic workspaces itself. Calling
         // remove_workspace() at the same time races the Shell workspace UI
         // and can leave it holding disposed actors.
-        if (typeof Meta.prefs_get_dynamic_workspaces === 'function' &&
-            Meta.prefs_get_dynamic_workspaces())
+        if (Meta.prefs_get_dynamic_workspaces())
             return;
 
         const workspaceManager = global.workspace_manager;
