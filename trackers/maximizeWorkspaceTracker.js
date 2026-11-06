@@ -263,6 +263,13 @@ export default class MaximizeWorkspaceTracker {
         if (!this._workspaceIsValid(workspace))
             return;
 
+        // Mutter removes empty dynamic workspaces itself. Calling
+        // remove_workspace() at the same time races the Shell workspace UI
+        // and can leave it holding disposed actors.
+        if (typeof Meta.prefs_get_dynamic_workspaces === 'function' &&
+            Meta.prefs_get_dynamic_workspaces())
+            return;
+
         const workspaceManager = global.workspace_manager;
         const workspaceWindows = workspace.list_windows()
             .filter(metaWindow => !metaWindow.is_on_all_workspaces());
