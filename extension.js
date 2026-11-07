@@ -2,6 +2,7 @@ import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extension
 import * as AppDisplay from 'resource:///org/gnome/shell/ui/appDisplay.js';
 import * as Dash from 'resource:///org/gnome/shell/ui/dash.js';
 import DockHoverTracker from './trackers/dockHoverTracker.js';
+import MaximizeWorkspaceTracker from './trackers/maximizeWorkspaceTracker.js';
 import {getVisibleAppWindows} from './utils/windows.js';
 
 export default class DockWindowPreviewExtension extends Extension {
@@ -29,6 +30,11 @@ export default class DockWindowPreviewExtension extends Extension {
         if (this._tracker) {
             this._tracker.destroy();
             this._tracker = null;
+        }
+
+        if (this._maximizeWorkspaceTracker) {
+            this._maximizeWorkspaceTracker.destroy();
+            this._maximizeWorkspaceTracker = null;
         }
 
         if (this._injectionManager) {
