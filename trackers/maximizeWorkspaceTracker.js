@@ -62,8 +62,12 @@ export default class MaximizeWorkspaceTracker {
 
     _syncEnabled() {
         this._enabled = this._settings.get_boolean('maximize-to-new-workspace');
-        if (!this._enabled)
+        if (this._enabled) {
+            for (const metaWindow of this._windowSignals.keys())
+                this._queueWindowCheck(metaWindow);
+        } else {
             this._restoreAllWindows(false);
+        }
     }
 
     _trackWindow(metaWindow) {
@@ -85,6 +89,7 @@ export default class MaximizeWorkspaceTracker {
             ),
         ];
         this._windowSignals.set(metaWindow, signalIds);
+        this._queueWindowCheck(metaWindow);
     }
 
     _windowUnmanaged(metaWindow) {

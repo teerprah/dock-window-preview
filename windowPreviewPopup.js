@@ -129,9 +129,10 @@ export default class WindowPreviewPopup {
 
         this._app = app;
         this._sourceActor = sourceActor;
-        this._clearChildren();
+        this._cancelItemHover();
         this._hideEnrichedPreview();
         this._windowPeek.restore();
+        this._clearChildren();
 
         this._actor.add_child(new St.Label({
             style_class: 'dock-preview-header',

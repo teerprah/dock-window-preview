@@ -34,9 +34,9 @@ export default class DockWindowPreviewExtension extends Extension {
             this._maximizeWorkspaceTracker = null;
         }
 
-        if (this._injectionManager) {
-            this._injectionManager.clear();
-            this._injectionManager = null;
+        if (this._tracker) {
+            this._tracker.destroy();
+            this._tracker = null;
         }
 
         if (this._injectionManager) {
