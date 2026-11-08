@@ -4,6 +4,14 @@ Notable changes to Dock Window Preview are documented here.
 
 ## Under Review
 
+## 8 - 2026-11-05
+
+- Added an optional larger window preview when hovering a dock window preview.
+- Added an optional Peek effect that fades other windows while a preview is hovered.
+- Split preview effects into focused modules and removed redundant compatibility wrappers.
+- Avoided racing GNOME's automatic cleanup of dynamic workspaces.
+- Added fade animations to the dock preview popup.
+
 ## 7 - 2026-11-05
 
 - Added an optional setting to close a window by middle-clicking its preview, contributed by [@plugo1](https://github.com/plugo1).

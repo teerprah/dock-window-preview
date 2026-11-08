@@ -70,6 +70,12 @@ export default class DockHoverTracker {
             showCloseButton: this._settings.get_boolean('show-close-button'),
             closeButtonPosition: this._settings.get_string('close-button-position'),
             middleClickClose: this._settings.get_boolean('middle-click-close'),
+            popupFadeDurationMs: this._settings.get_int('popup-fade-duration-ms'),
+            enrichedPreviewEnabled: this._settings.get_boolean('enriched-preview-enabled'),
+            enrichedPreviewDelayMs: this._settings.get_int('enriched-preview-delay-ms'),
+            enrichedPreviewFadeDurationMs: this._settings.get_int('enriched-preview-fade-duration-ms'),
+            enrichedPreviewSizePercent: this._settings.get_int('enriched-preview-size-percent'),
+            peekEnabled: this._settings.get_boolean('peek-enabled'),
         });
 
         this._cancelShow();
@@ -126,7 +132,6 @@ export default class DockHoverTracker {
                 actor: this._getIconActor(delegate, current),
             };
         }
-
         return null;
     }
 
@@ -141,17 +146,14 @@ export default class DockHoverTracker {
                 hasStyleClass(current, 'dash'))
                 return true;
         }
-
         return false;
     }
 
     _getIconActor(icon, fallbackActor) {
         if (icon instanceof Clutter.Actor)
             return icon;
-
         if (icon.actor instanceof Clutter.Actor)
             return icon.actor;
-
         return fallbackActor;
     }
 
@@ -190,7 +192,6 @@ export default class DockHoverTracker {
     _cancelShow() {
         if (!this._showTimeoutId)
             return;
-
         GLib.source_remove(this._showTimeoutId);
         this._showTimeoutId = 0;
     }
@@ -198,7 +199,6 @@ export default class DockHoverTracker {
     _cancelHide() {
         if (!this._hideTimeoutId)
             return;
-
         GLib.source_remove(this._hideTimeoutId);
         this._hideTimeoutId = 0;
     }
@@ -207,7 +207,6 @@ export default class DockHoverTracker {
         let windows = [];
         if (typeof icon.getInterestingWindows === 'function')
             windows = icon.getInterestingWindows();
-
         if (windows.length === 0)
             windows = icon.app.get_windows();
 

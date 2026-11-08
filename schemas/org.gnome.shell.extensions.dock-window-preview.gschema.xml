@@ -58,5 +58,35 @@
       <summary>Maximize windows on a new workspace</summary>
       <description>Whether maximized application windows are moved to a dedicated workspace and returned when restored.</description>
     </key>
+    <key name="popup-fade-duration-ms" type="i">
+      <default>150</default>
+      <summary>Popup fade animation duration</summary>
+      <description>Duration of the fade-in/fade-out animation for the preview popup in milliseconds.</description>
+    </key>
+    <key name="enriched-preview-enabled" type="b">
+      <default>true</default>
+      <summary>Enable enriched preview on hover</summary>
+      <description>When hovering a window preview item, show a larger centered preview after a delay.</description>
+    </key>
+    <key name="enriched-preview-delay-ms" type="i">
+      <default>120</default>
+      <summary>Enriched preview hover delay</summary>
+      <description>Delay before the enriched preview appears when hovering a window preview item (milliseconds).</description>
+    </key>
+    <key name="enriched-preview-fade-duration-ms" type="i">
+      <default>240</default>
+      <summary>Enriched preview fade animation duration</summary>
+      <description>Duration of the fade-in/fade-out animation for the enriched preview in milliseconds.</description>
+    </key>
+    <key name="enriched-preview-size-percent" type="i">
+      <default>85</default>
+      <summary>Enriched preview size</summary>
+      <description>Maximum percentage of the monitor used by the centered enriched preview.</description>
+    </key>
+    <key name="peek-enabled" type="b">
+      <default>false</default>
+      <summary>Enable Peek on hover</summary>
+      <description>Keep the hovered preview window visible while fading other windows.</description>
+    </key>
   </schema>
 </schemalist>

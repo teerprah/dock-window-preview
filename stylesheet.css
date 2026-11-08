@@ -1,5 +1,5 @@
 .dock-preview-popup {
-    background-color: rgba(24, 24, 28, 0.94);
+    background-color: rgba(24, 24, 28, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     padding: 10px;
@@ -20,6 +20,8 @@
     border-radius: 10px;
     padding: 6px;
     background-color: rgba(255, 255, 255, 0.03);
+    transition-duration: 120ms;
+    transition-timing-function: ease-out;
 }
 
 .dock-preview-item:hover,
@@ -53,6 +55,8 @@
     border-radius: 999px;
     background-color: rgba(10, 10, 12, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.18);
+    transition-duration: 120ms;
+    transition-timing-function: ease-out;
 }
 
 .dock-preview-close-button:hover,
@@ -64,4 +68,14 @@
 .dock-preview-close-icon {
     icon-size: 12px;
     color: #ffffff;
+}
+
+/* Enriched Preview Styles */
+.dock-enriched-preview {
+    background-color: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    padding: 0;
+    box-shadow: none;
+    overflow: hidden;
 }
