@@ -6,7 +6,7 @@ Notable changes to Dock Window Preview are documented here.
 
 ## 9 - 2026-11-08
 
-- Added GNOME Shell 48 support.
+- Added GNOME Shell 48 support, courtesy of [devl34n](https://github.com/devl34n)
 - Added an optional larger window preview when hovering a dock window preview.
 - Added an optional Peek effect that fades other windows while a preview is hovered.
 - Added fade animations to the dock preview popup.
