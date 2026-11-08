@@ -4,6 +4,7 @@
     "settings-schema": "org.gnome.shell.extensions.dock-window-preview",
     "shell-version": [
         "46",
+        "48",
         "49",
         "50",
         "51"
