@@ -1,6 +1,6 @@
+<a href="https://www.buymeacoffee.com/serindipity" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 # dock-window-preview
 # Dock Window Preview (GNOME 46/48/49/50/51)
-
 This GNOME Shell extension shows open-window previews when you hover a dock icon.
 Clicking a preview activates that window; middle-clicking a preview closes that
 window, like the Windows taskbar.
