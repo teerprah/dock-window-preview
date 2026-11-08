@@ -4,13 +4,21 @@ Notable changes to Dock Window Preview are documented here.
 
 ## Under Review
 
-## 8 - 2026-11-05
+## 9 - 2026-11-08
 
+- Added GNOME Shell 48 support.
 - Added an optional larger window preview when hovering a dock window preview.
 - Added an optional Peek effect that fades other windows while a preview is hovered.
+- Added fade animations to the dock preview popup.
 - Split preview effects into focused modules and removed redundant compatibility wrappers.
 - Avoided racing GNOME's automatic cleanup of dynamic workspaces.
-- Added fade animations to the dock preview popup.
+- Fixed extension cleanup so disabling removes the dock hover tracker and its resources.
+- Cancelled pending enriched-preview hover work before rebuilding popup contents.
+- Applied the maximize-to-new-workspace behavior to windows that are already maximized.
+
+## 8 - 2026-11-07
+
+- Fixed loading and packaging of the maximize-to-new-workspace tracker.
 
 ## 7 - 2026-11-05
 
