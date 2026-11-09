@@ -11,6 +11,10 @@ function clamp(value, min, max) {
 }
 
 function hasStyleClass(actor, className) {
+    // Plain Clutter actors (not St widgets) have no style class.
+    if (typeof actor?.get_style_class_name !== 'function')
+        return false;
+
     const style = actor.get_style_class_name();
     return typeof style === 'string' && style.split(/\s+/).includes(className);
 }
