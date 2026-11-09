@@ -47,4 +47,3 @@ Direct script usage:
   - Optional Peek effect that fades other windows while hovering a preview
   - Preview popup animation duration
   - Optional macOS-style dedicated workspace for maximized windows
-- The hover detector is tuned for dash/dock icons and uses the same app-window model as dock menu entries (including the "All Windows" behavior).
