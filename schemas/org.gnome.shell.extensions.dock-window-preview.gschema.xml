@@ -68,6 +68,11 @@
       <summary>Enable enriched preview on hover</summary>
       <description>When hovering a window preview item, show a larger centered preview after a delay.</description>
     </key>
+    <key name="enriched-preview-skip-focused" type="b">
+      <default>false</default>
+      <summary>Skip enriched preview for the focused window</summary>
+      <description>Don't show the enriched preview when hovering the preview item of the window that already has focus.</description>
+    </key>
     <key name="enriched-preview-delay-ms" type="i">
       <default>120</default>
       <summary>Enriched preview hover delay</summary>

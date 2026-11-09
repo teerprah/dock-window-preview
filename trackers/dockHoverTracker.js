@@ -75,6 +75,7 @@ export default class DockHoverTracker {
             enrichedPreviewDelayMs: this._settings.get_int('enriched-preview-delay-ms'),
             enrichedPreviewFadeDurationMs: this._settings.get_int('enriched-preview-fade-duration-ms'),
             enrichedPreviewSizePercent: this._settings.get_int('enriched-preview-size-percent'),
+            enrichedPreviewSkipFocused: this._settings.get_boolean('enriched-preview-skip-focused'),
             peekEnabled: this._settings.get_boolean('peek-enabled'),
         });
 

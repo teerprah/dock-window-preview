@@ -60,6 +60,7 @@ export default class WindowPreviewPopup {
         this._enrichedPreviewDelayMs = DEFAULT_ENRICHED_PREVIEW_DELAY_MS;
         this._enrichedPreviewFadeDurationMs = DEFAULT_ENRICHED_PREVIEW_FADE_DURATION_MS;
         this._enrichedPreviewSizePercent = DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT;
+        this._enrichedPreviewSkipFocused = false;
         this._peekEnabled = DEFAULT_PEEK_ENABLED;
         this._refreshTimeoutId = 0;
 
@@ -103,6 +104,7 @@ export default class WindowPreviewPopup {
             40,
             95
         );
+        this._enrichedPreviewSkipFocused = Boolean(config.enrichedPreviewSkipFocused);
         const peekWasEnabled = this._peekEnabled;
         this._peekEnabled = config.peekEnabled;
         if (peekWasEnabled && !this._peekEnabled)
@@ -262,6 +264,11 @@ export default class WindowPreviewPopup {
             this._windowPeek.show(metaWindow);
         if (!this._enrichedPreviewEnabled)
             return;
+
+        if (this._enrichedPreviewSkipFocused && metaWindow.has_focus()) {
+            this._hideEnrichedPreview();
+            return;
+        }
 
         const showEnrichedPreview = () => {
             this._hoveredItemTimeoutId = 0;
