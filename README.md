@@ -47,3 +47,6 @@ Direct script usage:
   - Optional Peek effect that fades other windows while hovering a preview
   - Preview popup animation duration
   - Optional macOS-style dedicated workspace for maximized windows
+
+## Want to contribute?
+Please refer to our AI and LLM contribution policy [here](https://github.com/teerprah/dock-window-preview/wiki/Policy-on-AI-and-Large-Language-Model-(LLM)-Contributions)
