@@ -49,4 +49,6 @@ Direct script usage:
   - Optional macOS-style dedicated workspace for maximized windows
 
 ## Want to contribute?
-Please refer to our AI and LLM contribution policy [here](https://github.com/teerprah/dock-window-preview/wiki/Policy-on-AI-and-Large-Language-Model-(LLM)-Contributions)
+Please refer to:
+- our AI and LLM contribution policy [here](https://github.com/teerprah/dock-window-preview/wiki/Policy-on-AI-and-Large-Language-Model-(LLM)-Contributions)
+- Quality and GNOME Extension development guidelines [here](https://github.com/teerprah/dock-window-preview/wiki/Quality-Standards-and-GNOME-Extension-guidelines)
