@@ -1,5 +1,8 @@
 {
     "description": "Preview open windows by hovering over a dock icon, then select a preview to activate its window.",
+    "donations": {
+        "buymeacoffee": "serindipity"
+    },
     "name": "Dock Window Preview",
     "settings-schema": "org.gnome.shell.extensions.dock-window-preview",
     "shell-version": [
