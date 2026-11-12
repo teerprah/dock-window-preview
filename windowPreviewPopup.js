@@ -18,6 +18,7 @@ const DEFAULT_CLOSE_BUTTON_POSITION = 'right';
 const DEFAULT_MIDDLE_CLICK_CLOSE = true;
 const DEFAULT_POPUP_FADE_DURATION_MS = 150;
 const DEFAULT_ENRICHED_PREVIEW_ENABLED = true;
+const DEFAULT_ENRICHED_PREVIEW_SKIP_FOCUSED = false;
 const DEFAULT_ENRICHED_PREVIEW_DELAY_MS = 120;
 const DEFAULT_ENRICHED_PREVIEW_FADE_DURATION_MS = 240;
 const DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT = 85;
@@ -57,6 +58,7 @@ export default class WindowPreviewPopup {
         this._middleClickClose = DEFAULT_MIDDLE_CLICK_CLOSE;
         this._popupFadeDurationMs = DEFAULT_POPUP_FADE_DURATION_MS;
         this._enrichedPreviewEnabled = DEFAULT_ENRICHED_PREVIEW_ENABLED;
+        this._enrichedPreviewSkipFocused = DEFAULT_ENRICHED_PREVIEW_SKIP_FOCUSED;
         this._enrichedPreviewDelayMs = DEFAULT_ENRICHED_PREVIEW_DELAY_MS;
         this._enrichedPreviewFadeDurationMs = DEFAULT_ENRICHED_PREVIEW_FADE_DURATION_MS;
         this._enrichedPreviewSizePercent = DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT;
@@ -96,6 +98,7 @@ export default class WindowPreviewPopup {
         this._middleClickClose = config.middleClickClose;
         this._popupFadeDurationMs = clamp(config.popupFadeDurationMs, 0, 1000);
         this._enrichedPreviewEnabled = config.enrichedPreviewEnabled;
+        this._enrichedPreviewSkipFocused = config.enrichedPreviewSkipFocused;
         this._enrichedPreviewDelayMs = clamp(config.enrichedPreviewDelayMs, 100, 3000);
         this._enrichedPreviewFadeDurationMs = clamp(config.enrichedPreviewFadeDurationMs, 0, 1000);
         this._enrichedPreviewSizePercent = clamp(
@@ -262,6 +265,11 @@ export default class WindowPreviewPopup {
             this._windowPeek.show(metaWindow);
         if (!this._enrichedPreviewEnabled)
             return;
+
+        if (this._enrichedPreviewSkipFocused && metaWindow.has_focus()) {
+            this._hideEnrichedPreview();
+            return;
+        }
 
         const showEnrichedPreview = () => {
             this._hoveredItemTimeoutId = 0;

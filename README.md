@@ -44,6 +44,7 @@ Direct script usage:
   - Optional per-window close button with left/right placement
   - Middle-click on a preview to close the window (enabled by default)
   - Optional centered overview-style preview with configurable delay, size, and animation duration
+  - Optional Skip Focused Window setting for enriched previews (off by default)
   - Optional Peek effect that fades other windows while hovering a preview
   - Preview popup animation duration
   - Optional macOS-style dedicated workspace for maximized windows

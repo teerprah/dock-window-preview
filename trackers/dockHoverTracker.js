@@ -75,6 +75,7 @@ export default class DockHoverTracker {
             middleClickClose: this._settings.get_boolean('middle-click-close'),
             popupFadeDurationMs: this._settings.get_int('popup-fade-duration-ms'),
             enrichedPreviewEnabled: this._settings.get_boolean('enriched-preview-enabled'),
+            enrichedPreviewSkipFocused: this._settings.get_boolean('enriched-preview-skip-focused'),
             enrichedPreviewDelayMs: this._settings.get_int('enriched-preview-delay-ms'),
             enrichedPreviewFadeDurationMs: this._settings.get_int('enriched-preview-fade-duration-ms'),
             enrichedPreviewSizePercent: this._settings.get_int('enriched-preview-size-percent'),

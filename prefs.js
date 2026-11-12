@@ -107,6 +107,13 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
 
         const enrichedOptionRows = [];
 
+        const enrichedSkipFocusedRow = new Adw.SwitchRow({
+            title: 'Skip Focused Window',
+            subtitle: "Don't show the enriched preview for the window that already has focus.",
+        });
+        settings.bind('enriched-preview-skip-focused', enrichedSkipFocusedRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        enrichedOptionRows.push(enrichedSkipFocusedRow);
+
         enrichedOptionRows.push(createSpinRow({
             title: 'Enriched Preview Delay',
             subtitle: 'Hover delay before enriched preview appears (milliseconds).',
