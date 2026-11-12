@@ -2,7 +2,15 @@
 
 Notable changes to Dock Window Preview are documented here.
 
-## Under Review
+## 10 - 2026-11-11
+
+- Added an optional Skip Focused Window setting for enriched previews, contributed by [@hoisel](https://github.com/hoisel). Disabled by default, it skips the focused window and hides any enriched preview already open when hovering that window.
+- Fixed hover previews stopping after the pointer encounters an actor without style-class support.
+- Recompiled the GSettings schema to include all current settings.
+- Updated timer cancellation to use `GLib.Source.remove()` and made the enriched-preview timeout callback explicitly return `GLib.SOURCE_REMOVE`.
+- Simplified extension cleanup, tooltip type checks, and preview imports to address static-analysis warnings.
+- Added a donation link to the extension metadata.
+- Updated contribution guidelines and documented validation steps, including outdated validators flagging GNOME 51 support.
 
 ## 9 - 2026-11-08
 
