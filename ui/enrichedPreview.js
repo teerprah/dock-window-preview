@@ -1,6 +1,6 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {layoutManager} from 'resource:///org/gnome/shell/ui/main.js';
 
 const SWITCH_DURATION_MS = 180;
 
@@ -73,7 +73,7 @@ export default class EnrichedPreview {
         this._requestId++;
         if (this._actor) {
             this._actor.remove_all_transitions();
-            Main.layoutManager.removeChrome(this._actor);
+            layoutManager.removeChrome(this._actor);
             this._actor.destroy();
             this._actor = null;
         }
@@ -100,7 +100,7 @@ export default class EnrichedPreview {
             visible: false,
             opacity: 0,
         });
-        Main.layoutManager.addTopChrome(this._actor);
+        layoutManager.addTopChrome(this._actor);
 
         const parent = this._actor.get_parent();
         if (parent && this._mainPopupActor.get_parent() === parent)
@@ -171,8 +171,8 @@ export default class EnrichedPreview {
     }
 
     _createContent() {
-        const monitor = Main.layoutManager.findMonitorForActor(this._sourceItem) ??
-            Main.layoutManager.primaryMonitor;
+        const monitor = layoutManager.findMonitorForActor(this._sourceItem) ??
+            layoutManager.primaryMonitor;
         const frame = this._sourceWindow.get_frame_rect();
         const sourceWidth = Math.max(1, frame.width);
         const sourceHeight = Math.max(1, frame.height);
@@ -209,8 +209,8 @@ export default class EnrichedPreview {
     }
 
     _positionOnMonitor() {
-        const monitor = Main.layoutManager.findMonitorForActor(this._sourceItem) ??
-            Main.layoutManager.primaryMonitor;
+        const monitor = layoutManager.findMonitorForActor(this._sourceItem) ??
+            layoutManager.primaryMonitor;
         const [, , width, height] = this._actor.get_preferred_size();
         const position = {
             x: Math.round(monitor.x + (monitor.width - width) / 2),

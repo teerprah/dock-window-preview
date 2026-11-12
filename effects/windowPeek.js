@@ -75,7 +75,7 @@ export default class WindowPeek {
     _cancelClear() {
         if (!this._clearTimeoutId)
             return;
-        GLib.source_remove(this._clearTimeoutId);
+        GLib.Source.remove(this._clearTimeoutId);
         this._clearTimeoutId = 0;
     }
 }

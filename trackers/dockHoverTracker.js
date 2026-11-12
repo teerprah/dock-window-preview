@@ -47,7 +47,7 @@ export default class DockHoverTracker {
         this._cancelHide();
 
         if (this._pollId) {
-            GLib.source_remove(this._pollId);
+            GLib.Source.remove(this._pollId);
             this._pollId = 0;
         }
 
@@ -196,14 +196,14 @@ export default class DockHoverTracker {
     _cancelShow() {
         if (!this._showTimeoutId)
             return;
-        GLib.source_remove(this._showTimeoutId);
+        GLib.Source.remove(this._showTimeoutId);
         this._showTimeoutId = 0;
     }
 
     _cancelHide() {
         if (!this._hideTimeoutId)
             return;
-        GLib.source_remove(this._hideTimeoutId);
+        GLib.Source.remove(this._hideTimeoutId);
         this._hideTimeoutId = 0;
     }
 

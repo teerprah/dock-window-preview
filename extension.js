@@ -14,7 +14,8 @@ export default class DockWindowPreviewExtension extends Extension {
             AppDisplay.AppIcon.prototype,
             'shouldShowTooltip',
             originalMethod => function () {
-                if (this instanceof Dash.DashIcon && getVisibleAppWindows(this.app).length > 0)
+                const isDashIcon = this instanceof Dash.DashIcon;
+                if (isDashIcon && getVisibleAppWindows(this.app).length > 0)
                     return false;
 
                 return originalMethod.call(this);
@@ -29,20 +30,14 @@ export default class DockWindowPreviewExtension extends Extension {
     }
 
     disable() {
-        if (this._maximizeWorkspaceTracker) {
-            this._maximizeWorkspaceTracker.destroy();
-            this._maximizeWorkspaceTracker = null;
-        }
+        this._maximizeWorkspaceTracker?.destroy();
+        this._maximizeWorkspaceTracker = null;
 
-        if (this._tracker) {
-            this._tracker.destroy();
-            this._tracker = null;
-        }
+        this._tracker?.destroy();
+        this._tracker = null;
 
-        if (this._injectionManager) {
-            this._injectionManager.clear();
-            this._injectionManager = null;
-        }
+        this._injectionManager?.clear();
+        this._injectionManager = null;
 
         this._settings = null;
     }

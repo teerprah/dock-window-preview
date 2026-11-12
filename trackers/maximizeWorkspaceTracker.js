@@ -44,11 +44,11 @@ export default class MaximizeWorkspaceTracker {
         }
 
         for (const sourceId of this._pendingChecks.values())
-            GLib.source_remove(sourceId);
+            GLib.Source.remove(sourceId);
         this._pendingChecks.clear();
 
         for (const sourceId of this._cleanupSourceIds)
-            GLib.source_remove(sourceId);
+            GLib.Source.remove(sourceId);
         this._cleanupSourceIds.clear();
 
         for (const [metaWindow, signalIds] of this._windowSignals)
@@ -122,7 +122,7 @@ export default class MaximizeWorkspaceTracker {
         if (!sourceId)
             return;
 
-        GLib.source_remove(sourceId);
+        GLib.Source.remove(sourceId);
         this._pendingChecks.delete(metaWindow);
     }
 

@@ -50,6 +50,16 @@ Direct script usage:
   - Optional macOS-style dedicated workspace for maximized windows
 
 ## Want to contribute?
+
+### Validation
+
+Compile schemas with `glib-compile-schemas --strict schemas` and build the submission ZIP with `make zip`.
+Run Shexli on the ZIP and `ego-lint` on its extracted contents.
+
+Shexli 0.2.1 and EGO lint versions with a hardcoded GNOME 50 ceiling flag the declared GNOME 51 support.
+[GNOME 51 was released on September 16, 2026](https://release.gnome.org/51/); use validators with an updated release baseline.
+The version ceiling is a validator issue and does not require removing GNOME 51 from `metadata.json`.
+
 Please refer to:
 - our AI and LLM contribution policy [here](https://github.com/teerprah/dock-window-preview/wiki/Policy-on-AI-and-Large-Language-Model-(LLM)-Contributions)
 - Quality and GNOME Extension development guidelines [here](https://github.com/teerprah/dock-window-preview/wiki/Quality-Standards-and-GNOME-Extension-guidelines)

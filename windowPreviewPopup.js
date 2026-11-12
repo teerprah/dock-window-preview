@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {activateWindow, layoutManager} from 'resource:///org/gnome/shell/ui/main.js';
 import WindowPeek from './effects/windowPeek.js';
 import EnrichedPreview from './ui/enrichedPreview.js';
 import {getVisibleAppWindows} from './utils/windows.js';
@@ -82,7 +82,7 @@ export default class WindowPreviewPopup {
             opacity: 0,
         });
 
-        Main.layoutManager.addTopChrome(this._actor);
+        layoutManager.addTopChrome(this._actor);
     }
 
     get visible() { return this._actor.visible; }
@@ -188,7 +188,7 @@ export default class WindowPreviewPopup {
         this._windowPeek = null;
 
         this._clearChildren();
-        Main.layoutManager.removeChrome(this._actor);
+        layoutManager.removeChrome(this._actor);
         this._actor.destroy();
         this._actor = null;
         this._app = null;
@@ -229,7 +229,7 @@ export default class WindowPreviewPopup {
         button.set_child(layout);
         button.connect('clicked', () => {
             this.hide();
-            Main.activateWindow(metaWindow);
+            activateWindow(metaWindow);
         });
 
         if (this._middleClickClose)
@@ -272,10 +272,8 @@ export default class WindowPreviewPopup {
         }
 
         const showEnrichedPreview = () => {
-            this._hoveredItemTimeoutId = 0;
-
             if (this._hoverIdentity !== hoverId || this._hoveredItem !== item)
-                return GLib.SOURCE_REMOVE;
+                return;
 
             if (!this._enrichedPreview) {
                 this._enrichedPreview = new EnrichedPreview(
@@ -286,7 +284,6 @@ export default class WindowPreviewPopup {
             }
 
             this._enrichedPreview.show(item, metaWindow, app);
-            return GLib.SOURCE_REMOVE;
         };
 
         if (this._enrichedPreview && this._enrichedPreview.active)
@@ -295,7 +292,11 @@ export default class WindowPreviewPopup {
             this._hoveredItemTimeoutId = GLib.timeout_add(
                 GLib.PRIORITY_DEFAULT,
                 this._enrichedPreviewDelayMs,
-                showEnrichedPreview
+                () => {
+                    this._hoveredItemTimeoutId = 0;
+                    showEnrichedPreview();
+                    return GLib.SOURCE_REMOVE;
+                }
             );
     }
 
@@ -321,7 +322,7 @@ export default class WindowPreviewPopup {
 
     _cancelItemHover() {
         if (this._hoveredItemTimeoutId) {
-            GLib.source_remove(this._hoveredItemTimeoutId);
+            GLib.Source.remove(this._hoveredItemTimeoutId);
             this._hoveredItemTimeoutId = 0;
         }
         this._hoveredItem = null;
@@ -330,7 +331,7 @@ export default class WindowPreviewPopup {
 
     _cancelHoverLeave() {
         if (this._hoverLeaveTimeoutId) {
-            GLib.source_remove(this._hoverLeaveTimeoutId);
+            GLib.Source.remove(this._hoverLeaveTimeoutId);
             this._hoverLeaveTimeoutId = 0;
         }
     }
@@ -459,8 +460,8 @@ export default class WindowPreviewPopup {
 
     _positionNearSource() {
         const monitor =
-            Main.layoutManager.findMonitorForActor(this._sourceActor) ??
-            Main.layoutManager.primaryMonitor;
+            layoutManager.findMonitorForActor(this._sourceActor) ??
+            layoutManager.primaryMonitor;
 
         const [sourceX, sourceY] = this._sourceActor.get_transformed_position();
         const [sourceWidth, sourceHeight] = this._sourceActor.get_transformed_size();
@@ -527,7 +528,7 @@ export default class WindowPreviewPopup {
     _cancelRefresh() {
         if (!this._refreshTimeoutId)
             return;
-        GLib.source_remove(this._refreshTimeoutId);
+        GLib.Source.remove(this._refreshTimeoutId);
         this._refreshTimeoutId = 0;
     }
 
