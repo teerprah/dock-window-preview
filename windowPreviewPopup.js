@@ -7,7 +7,7 @@ import WindowPeek from './effects/windowPeek.js';
 import EnrichedPreview from './ui/enrichedPreview.js';
 import {getVisibleAppWindows} from './utils/windows.js';
 
-const POPUP_GAP = 12;
+const POPUP_GAP = 34;
 const POPUP_MARGIN = 8;
 const DEFAULT_PREVIEW_LAYOUT = 'vertical';
 const DEFAULT_PREVIEW_WIDTH = 260;
@@ -85,7 +85,7 @@ export default class WindowPreviewPopup {
         layoutManager.addTopChrome(this._actor);
     }
 
-    get visible() { return this._actor.visible; }
+    get visible() { try { return Boolean(this._actor && this._actor.visible); } catch (e) { return false; } }
 
     updateConfig(config) {
         const layout = config.previewLayout;

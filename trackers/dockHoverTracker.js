@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import WindowPreviewPopup from '../windowPreviewPopup.js';
 import {filterVisibleWindows} from '../utils/windows.js';
 
-const HIDE_DELAY_MS = 240;
+const HIDE_DELAY_MS = 320;
 const POINTER_POLL_MS = 90;
 
 function clamp(value, min, max) {
@@ -124,7 +124,7 @@ export default class DockHoverTracker {
 
     _findDockIcon(actor) {
         for (let current = actor; current; current = current.get_parent()) {
-            const delegate = current._delegate;
+            const delegate = current._delegate ?? current._appwell ?? (current.app ? current : null);
             if (!this._isDockAppIcon(delegate))
                 continue;
 
