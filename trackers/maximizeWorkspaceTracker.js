@@ -8,13 +8,14 @@ function clamp(value, min, max) {
 export default class MaximizeWorkspaceTracker {
     constructor(settings) {
         this._settings = settings;
-        this._enabled = this._settings.get_boolean('maximize-to-new-workspace');
+        this._moveMaximizedWindows =
+            this._settings.get_boolean('maximize-to-new-workspace');
         this._settingsChangedId = 0;
         this._windowCreatedId = 0;
         this._windowSignals = new Map();
         this._windowStates = new Map();
         this._pendingChecks = new Map();
-        this._cleanupSourceIds = new Set();
+        this._workspaceCleanupSources = new Map();
 
         this._settingsChangedId = this._settings.connect(
             'changed::maximize-to-new-workspace',
@@ -47,9 +48,9 @@ export default class MaximizeWorkspaceTracker {
             GLib.Source.remove(sourceId);
         this._pendingChecks.clear();
 
-        for (const sourceId of this._cleanupSourceIds)
+        for (const sourceId of this._workspaceCleanupSources.values())
             GLib.Source.remove(sourceId);
-        this._cleanupSourceIds.clear();
+        this._workspaceCleanupSources.clear();
 
         for (const [metaWindow, signalIds] of this._windowSignals)
             for (const signalId of signalIds)
@@ -61,8 +62,9 @@ export default class MaximizeWorkspaceTracker {
     }
 
     _syncEnabled() {
-        this._enabled = this._settings.get_boolean('maximize-to-new-workspace');
-        if (this._enabled) {
+        this._moveMaximizedWindows =
+            this._settings.get_boolean('maximize-to-new-workspace');
+        if (this._moveMaximizedWindows) {
             for (const metaWindow of this._windowSignals.keys())
                 this._queueWindowCheck(metaWindow);
         } else {
@@ -138,7 +140,8 @@ export default class MaximizeWorkspaceTracker {
             return;
         }
 
-        if (this._enabled && isMaximized && this._canManageWindow(metaWindow))
+        if (this._moveMaximizedWindows && isMaximized &&
+            this._canManageWindow(metaWindow))
             this._moveWindowToNewWorkspace(metaWindow);
     }
 
@@ -212,13 +215,15 @@ export default class MaximizeWorkspaceTracker {
     }
 
     _queueWorkspaceCleanup(workspace) {
-        let sourceId = 0;
-        sourceId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-            this._cleanupSourceIds.delete(sourceId);
+        if (this._workspaceCleanupSources.has(workspace))
+            return;
+
+        const sourceId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._workspaceCleanupSources.delete(workspace);
             this._removeWorkspaceIfEmpty(workspace);
             return GLib.SOURCE_REMOVE;
         });
-        this._cleanupSourceIds.add(sourceId);
+        this._workspaceCleanupSources.set(workspace, sourceId);
     }
 
     _removeWorkspaceIfEmpty(workspace) {

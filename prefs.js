@@ -27,7 +27,7 @@ function createSpinRow({title, subtitle, settings, key, min, max, step}) {
     return row;
 }
 
-function createSelectionRow({title, subtitle, settings, key, options}) {
+function createSelectionRow({title, subtitle, settings, signalOwner, key, options}) {
     const row = new Adw.ActionRow({title, subtitle});
     const model = Gtk.StringList.new(options.map(option => option.label));
     const dropdown = new Gtk.DropDown({
@@ -49,7 +49,7 @@ function createSelectionRow({title, subtitle, settings, key, options}) {
         settings.set_string(key, option.value);
     });
 
-    settings.connect(`changed::${key}`, syncSelected);
+    settings.connectObject(`changed::${key}`, syncSelected, signalOwner);
     row.add_suffix(dropdown);
     row.activatable_widget = dropdown;
 
@@ -150,7 +150,11 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
                 row.sensitive = enabled;
         };
         syncEnrichedSensitivity();
-        settings.connect('changed::enriched-preview-enabled', syncEnrichedSensitivity);
+        settings.connectObject(
+            'changed::enriched-preview-enabled',
+            syncEnrichedSensitivity,
+            window
+        );
         for (const row of enrichedOptionRows)
             enrichedGroup.add(row);
 
@@ -174,6 +178,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Preview Layout',
             subtitle: 'Choose vertical stack or horizontal strip.',
             settings,
+            signalOwner: window,
             key: 'preview-layout',
             options: [
                 {label: 'Vertical stack', value: 'vertical'},
@@ -186,6 +191,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Title Overflow',
             subtitle: 'Choose whether long titles truncate or wrap.',
             settings,
+            signalOwner: window,
             key: 'title-overflow-mode',
             options: [
                 {label: 'Truncate with ellipsis', value: 'truncate'},
@@ -217,6 +223,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Close Button Position',
             subtitle: 'Choose which side of the preview card shows the close control.',
             settings,
+            signalOwner: window,
             key: 'close-button-position',
             options: [
                 {label: 'Left side', value: 'left'},
@@ -224,9 +231,13 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             ],
         });
         closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
-        settings.connect('changed::show-close-button', () => {
-            closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
-        });
+        settings.connectObject(
+            'changed::show-close-button',
+            () => {
+                closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
+            },
+            window
+        );
         previewGroup.add(closeButtonPositionRow);
 
         previewGroup.add(createSpinRow({
