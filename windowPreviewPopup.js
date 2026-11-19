@@ -64,6 +64,10 @@ export default class WindowPreviewPopup {
         this._enrichedPreviewSizePercent = DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT;
         this._peekEnabled = DEFAULT_PEEK_ENABLED;
         this._refreshTimeoutId = 0;
+        this._dismissed = true;
+        this._destroyed = false;
+        this._hiding = false;
+        this._popupAnimationId = 0;
 
         this._enrichedPreview = null;
         this._hoveredItem = null;
@@ -86,6 +90,12 @@ export default class WindowPreviewPopup {
     }
 
     get visible() { return this._actor.visible; }
+
+    get active() {
+        return !this._destroyed && (this.visible ||
+            Boolean(this._enrichedPreview?.active) || this._windowPeek.active ||
+            this._hoveredItemTimeoutId !== 0 || this._hoverLeaveTimeoutId !== 0);
+    }
 
     updateConfig(config) {
         const layout = config.previewLayout;
@@ -127,9 +137,11 @@ export default class WindowPreviewPopup {
     }
 
     show(app, windows, sourceActor) {
-        if (!sourceActor || windows.length === 0)
+        if (this._destroyed || !sourceActor || windows.length === 0)
             return;
 
+        // Rebuilding children may emit hover changes from the previous items.
+        this._dismissed = true;
         this._app = app;
         this._sourceActor = sourceActor;
         this._cancelItemHover();
@@ -153,33 +165,48 @@ export default class WindowPreviewPopup {
         for (const window of windows)
             itemsContainer.add_child(this._createWindowButton(window, app));
 
+        this._dismissed = false;
         this._actor.visible = true;
         this._positionNearSource();
         this._animateShow();
     }
 
-    hide() {
+    hide(immediate = false) {
+        if (this._destroyed)
+            return;
+
+        this._dismissed = true;
+        this._app = null;
+        this._sourceActor = null;
         this._cancelRefresh();
         this._cancelItemHover();
         this._cancelHoverLeave();
-        this._hideEnrichedPreview();
-        this._windowPeek.restore();
+        this._hideEnrichedPreview(false, immediate);
+        this._windowPeek.restore(immediate);
 
-        this._app = null;
-        this._sourceActor = null;
-
-        if (this._actor.visible && this._actor.opacity > 0) {
+        if (!immediate && this._actor.visible && this._actor.opacity > 0) {
             this._animateHide(() => {
                 this._actor.hide();
                 this._clearChildren();
             });
         } else {
+            this._popupAnimationId++;
+            this._hiding = false;
+            this._actor.remove_all_transitions();
+            this._actor.opacity = 0;
             this._actor.hide();
             this._clearChildren();
         }
     }
 
     destroy() {
+        if (this._destroyed)
+            return;
+
+        this._destroyed = true;
+        this._dismissed = true;
+        this._popupAnimationId++;
+        this._actor.remove_all_transitions();
         this._cancelRefresh();
         this._cancelItemHover();
         this._cancelHoverLeave();
@@ -190,6 +217,9 @@ export default class WindowPreviewPopup {
         this._clearChildren();
         layoutManager.removeChrome(this._actor);
         this._actor.destroy();
+        this._cancelRefresh();
+        this._cancelItemHover();
+        this._cancelHoverLeave();
         this._actor = null;
         this._app = null;
         this._sourceActor = null;
@@ -228,7 +258,9 @@ export default class WindowPreviewPopup {
 
         button.set_child(layout);
         button.connect('clicked', () => {
-            this.hide();
+            if (this._dismissed || this._destroyed)
+                return;
+            this.hide(true);
             activateWindow(metaWindow);
         });
 
@@ -253,7 +285,8 @@ export default class WindowPreviewPopup {
     }
 
     _onItemHoverEnter(item, metaWindow, app) {
-        if (!this._enrichedPreviewEnabled && !this._peekEnabled)
+        if (this._dismissed || this._destroyed ||
+            (!this._enrichedPreviewEnabled && !this._peekEnabled))
             return;
 
         this._cancelItemHover();
@@ -272,7 +305,8 @@ export default class WindowPreviewPopup {
         }
 
         const showEnrichedPreview = () => {
-            if (this._hoverIdentity !== hoverId || this._hoveredItem !== item)
+            if (this._dismissed || this._destroyed ||
+                this._hoverIdentity !== hoverId || this._hoveredItem !== item)
                 return;
 
             if (!this._enrichedPreview) {
@@ -293,6 +327,8 @@ export default class WindowPreviewPopup {
                 GLib.PRIORITY_DEFAULT,
                 this._enrichedPreviewDelayMs,
                 () => {
+                    if (this._hoverIdentity !== hoverId)
+                        return GLib.SOURCE_REMOVE;
                     this._hoveredItemTimeoutId = 0;
                     showEnrichedPreview();
                     return GLib.SOURCE_REMOVE;
@@ -301,6 +337,9 @@ export default class WindowPreviewPopup {
     }
 
     _onItemHoverLeave() {
+        if (this._dismissed || this._destroyed)
+            return;
+
         this._cancelItemHover();
         this._scheduleHoverLeave();
     }
@@ -312,6 +351,8 @@ export default class WindowPreviewPopup {
             HOVER_LEAVE_DELAY_MS,
             () => {
                 this._hoverLeaveTimeoutId = 0;
+                if (this._dismissed || this._destroyed)
+                    return GLib.SOURCE_REMOVE;
                 if (this._enrichedPreview)
                     this._enrichedPreview.hide();
                 this._windowPeek.restore();
@@ -336,13 +377,14 @@ export default class WindowPreviewPopup {
         }
     }
 
-    _hideEnrichedPreview(destroy = false) {
+    _hideEnrichedPreview(destroy = false, immediate = false) {
         this._cancelHoverLeave();
         if (this._enrichedPreview) {
-            this._enrichedPreview.hide();
             if (destroy) {
                 this._enrichedPreview.destroy();
                 this._enrichedPreview = null;
+            } else {
+                this._enrichedPreview.hide(immediate);
             }
         }
     }
@@ -357,6 +399,9 @@ export default class WindowPreviewPopup {
     }
 
     _closeWindow(item, metaWindow) {
+        if (this._dismissed || this._destroyed)
+            return;
+
         this._animateWindowClose(item);
         metaWindow.delete(global.get_current_time());
         this._queueRefresh();
@@ -503,7 +548,7 @@ export default class WindowPreviewPopup {
     }
 
     _queueRefresh() {
-        if (this._refreshTimeoutId)
+        if (this._dismissed || this._destroyed || this._refreshTimeoutId)
             return;
 
         this._refreshTimeoutId = GLib.timeout_add(
@@ -543,6 +588,8 @@ export default class WindowPreviewPopup {
     }
 
     _animateShow() {
+        this._popupAnimationId++;
+        this._hiding = false;
         this._actor.remove_all_transitions();
         this._actor.opacity = 0;
         this._actor.ease({
@@ -553,12 +600,23 @@ export default class WindowPreviewPopup {
     }
 
     _animateHide(onComplete) {
+        if (this._hiding)
+            return;
+
+        const animationId = ++this._popupAnimationId;
         this._actor.remove_all_transitions();
+        this._hiding = true;
         this._actor.ease({
             opacity: 0,
             duration: this._popupFadeDurationMs,
             mode: Clutter.AnimationMode.EASE_IN_QUAD,
-            onComplete,
+            onStopped: finished => {
+                if (this._destroyed || this._popupAnimationId !== animationId)
+                    return;
+                this._hiding = false;
+                if (finished)
+                    onComplete();
+            },
         });
     }
 }

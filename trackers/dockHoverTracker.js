@@ -183,7 +183,7 @@ export default class DockHoverTracker {
     }
 
     _scheduleHide() {
-        if (this._hideTimeoutId || !this._popup.visible)
+        if (this._hideTimeoutId || !this._popup.active)
             return;
 
         this._hideTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HIDE_DELAY_MS, () => {

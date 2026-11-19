@@ -53,6 +53,8 @@ Direct script usage:
 
 ### Validation
 
+Run `make test` for preview lifecycle regression checks (requires Node.js 18 or later).
+The checks load the production modules with mocked Shell actors and controlled animation timing.
 Compile schemas with `glib-compile-schemas --strict schemas` and build the submission ZIP with `make zip`.
 Run Shexli on the ZIP and `ego-lint` on its extracted contents.
 

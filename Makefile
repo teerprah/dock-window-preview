@@ -15,7 +15,7 @@ SOURCE_FILES := extension.js windowPreviewPopup.js $(TRACKER_FILES) $(UI_FILES) 
 INSTALL_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js $(SCHEMA_XML)
 ZIP_FILES := metadata.json $(SOURCE_FILES) stylesheet.css prefs.js LICENSE "$(SCHEMA_DIR)"
 
-.PHONY: install zip uninstall clean
+.PHONY: install zip uninstall clean test
 
 install: $(INSTALL_FILES)
 	@mkdir -p "$(INSTALL_DIR)"
@@ -43,6 +43,9 @@ zip: $(INSTALL_FILES)
 
 uninstall:
 	@UUID="$(UUID)" INSTALL_DIR="$(INSTALL_DIR)" ./uninstall.sh
+
+test:
+	@node --experimental-vm-modules tests/previewLifecycle.test.cjs
 
 clean:
 	@rm -f "$(ZIP_FILE)" "$(SCHEMA_COMPILED)"

@@ -15,6 +15,7 @@ export default class EnrichedPreview {
         this._sourceApp = null;
         this._requestId = 0;
         this._contentDirty = true;
+        this._hiding = false;
     }
 
     get active() {
@@ -28,6 +29,7 @@ export default class EnrichedPreview {
         this._sourceApp = app;
 
         const requestId = ++this._requestId;
+        this._hiding = false;
         const actor = this._ensureActor();
         actor.remove_all_transitions();
 
@@ -49,21 +51,32 @@ export default class EnrichedPreview {
         this._reveal(requestId, swapping);
     }
 
-    hide() {
-        if (!this._actor || !this._actor.visible)
+    hide(immediate = false) {
+        if (!this._actor || (!immediate && (!this._actor.visible || this._hiding)))
             return;
 
         const actor = this._actor;
         const requestId = ++this._requestId;
+        this._hiding = false;
         actor.remove_all_transitions();
+        if (immediate) {
+            actor.opacity = 0;
+            actor.visible = false;
+            return;
+        }
+
+        this._hiding = true;
         actor.ease({
             opacity: 0,
             scale_x: 0.96,
             scale_y: 0.96,
             duration: this._fadeDurationMs,
             mode: Clutter.AnimationMode.EASE_IN_QUINT,
-            onComplete: () => {
-                if (this._requestId === requestId)
+            onStopped: finished => {
+                if (this._requestId !== requestId)
+                    return;
+                this._hiding = false;
+                if (finished)
                     actor.visible = false;
             },
         });
@@ -71,6 +84,7 @@ export default class EnrichedPreview {
 
     destroy() {
         this._requestId++;
+        this._hiding = false;
         if (this._actor) {
             this._actor.remove_all_transitions();
             layoutManager.removeChrome(this._actor);

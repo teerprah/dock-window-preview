@@ -1,5 +1,4 @@
 import Clutter from 'gi://Clutter';
-import GLib from 'gi://GLib';
 
 const PEEKED_OPACITY = 32;
 const FADE_DURATION_MS = 160;
@@ -8,15 +7,25 @@ const RESTORE_DURATION_MS = 120;
 export default class WindowPeek {
     constructor() {
         this._originalOpacities = new Map();
-        this._clearTimeoutId = 0;
+        this._destroySignals = new Map();
+        this._generation = 0;
+    }
+
+    get active() {
+        return this._originalOpacities.size > 0;
     }
 
     show(metaWindow) {
-        this._cancelClear();
+        // Invalidate restore callbacks before replacing their transitions.
+        this._generation++;
 
         for (const windowActor of global.get_window_actors()) {
-            if (!this._originalOpacities.has(windowActor))
+            if (!this._originalOpacities.has(windowActor)) {
                 this._originalOpacities.set(windowActor, windowActor.opacity);
+                this._destroySignals.set(windowActor, windowActor.connect(
+                    'destroy', () => this._forgetActor(windowActor)
+                ));
+            }
 
             const opacity = windowActor.get_meta_window() === metaWindow
                 ? this._originalOpacities.get(windowActor)
@@ -30,52 +39,45 @@ export default class WindowPeek {
     }
 
     restore(immediate = false) {
-        this._cancelClear();
+        const generation = ++this._generation;
         if (this._originalOpacities.size === 0)
             return;
 
         const activeActors = new Set(global.get_window_actors());
-        const duration = immediate ? 0 : RESTORE_DURATION_MS;
-        for (const [windowActor, opacity] of this._originalOpacities) {
-            if (!activeActors.has(windowActor))
+        for (const [windowActor, opacity] of [...this._originalOpacities]) {
+            if (!activeActors.has(windowActor)) {
+                this._forgetActor(windowActor);
                 continue;
+            }
 
             if (immediate) {
                 windowActor.remove_transition('opacity');
                 windowActor.opacity = opacity;
+                this._forgetActor(windowActor);
             } else {
                 windowActor.ease({
                     opacity,
-                    duration,
+                    duration: RESTORE_DURATION_MS,
                     mode: Clutter.AnimationMode.EASE_OUT_SINE,
+                    onStopped: finished => {
+                        // Cancellation retains the original value for a retry.
+                        if (finished && this._generation === generation)
+                            this._forgetActor(windowActor);
+                    },
                 });
             }
         }
-
-        if (immediate) {
-            this._originalOpacities.clear();
-            return;
-        }
-
-        this._clearTimeoutId = GLib.timeout_add(
-            GLib.PRIORITY_DEFAULT,
-            duration + 32,
-            () => {
-                this._clearTimeoutId = 0;
-                this._originalOpacities.clear();
-                return GLib.SOURCE_REMOVE;
-            }
-        );
     }
 
     destroy() {
         this.restore(true);
     }
 
-    _cancelClear() {
-        if (!this._clearTimeoutId)
-            return;
-        GLib.Source.remove(this._clearTimeoutId);
-        this._clearTimeoutId = 0;
+    _forgetActor(windowActor) {
+        const signalId = this._destroySignals.get(windowActor);
+        if (signalId)
+            windowActor.disconnect(signalId);
+        this._destroySignals.delete(windowActor);
+        this._originalOpacities.delete(windowActor);
     }
 }

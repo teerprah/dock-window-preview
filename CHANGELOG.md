@@ -2,6 +2,13 @@
 
 Notable changes to Dock Window Preview are documented here.
 
+## 11 - 2026-11-18
+
+- Clear preview effects before activating a window and reject hover work after dismissal or destruction.
+- Retain Peek's original window opacities until restoration completes, including interrupted animations and window destruction.
+- Clean up enlarged previews and Peek effects even when the main popup is hidden, without restarting fades already in progress.
+- Added preview lifecycle regression checks through `make test`.
+
 ## 10 - 2026-11-11
 
 - Added an optional Skip Focused Window setting for enriched previews, contributed by [@hoisel](https://github.com/hoisel). Disabled by default, it skips the focused window and hides any enriched preview already open when hovering that window.

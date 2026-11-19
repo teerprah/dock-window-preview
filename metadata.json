@@ -1,5 +1,5 @@
 {
-    "description": "Preview open windows by hovering over a dock icon, then select a preview to activate its window.",
+    "description": "Preview open windows by hovering over a dock icon, then select a preview to activate its window. Uses GNOME Shell internal dock APIs to identify application icons.",
     "donations": {
         "buymeacoffee": "serindipity"
     },
