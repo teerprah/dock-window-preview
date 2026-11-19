@@ -64,8 +64,6 @@ export default class WindowPreviewPopup {
         this._enrichedPreviewSizePercent = DEFAULT_ENRICHED_PREVIEW_SIZE_PERCENT;
         this._peekEnabled = DEFAULT_PEEK_ENABLED;
         this._refreshTimeoutId = 0;
-        this._dismissed = true;
-        this._destroyed = false;
         this._hiding = false;
         this._popupAnimationId = 0;
 
@@ -89,10 +87,10 @@ export default class WindowPreviewPopup {
         layoutManager.addTopChrome(this._actor);
     }
 
-    get visible() { return this._actor.visible; }
+    get visible() { return this._actor?.visible ?? false; }
 
     get active() {
-        return !this._destroyed && (this.visible ||
+        return Boolean(this._actor) && (this.visible ||
             Boolean(this._enrichedPreview?.active) || this._windowPeek.active ||
             this._hoveredItemTimeoutId !== 0 || this._hoverLeaveTimeoutId !== 0);
     }
@@ -137,17 +135,19 @@ export default class WindowPreviewPopup {
     }
 
     show(app, windows, sourceActor) {
-        if (this._destroyed || !sourceActor || windows.length === 0)
+        if (!this._actor || !sourceActor || windows.length === 0)
             return;
 
         // Rebuilding children may emit hover changes from the previous items.
-        this._dismissed = true;
-        this._app = app;
-        this._sourceActor = sourceActor;
+        this._app = null;
+        this._sourceActor = null;
         this._cancelItemHover();
         this._hideEnrichedPreview();
         this._windowPeek.restore();
         this._clearChildren();
+
+        this._app = app;
+        this._sourceActor = sourceActor;
 
         this._actor.add_child(new St.Label({
             style_class: 'dock-preview-header',
@@ -165,17 +165,15 @@ export default class WindowPreviewPopup {
         for (const window of windows)
             itemsContainer.add_child(this._createWindowButton(window, app));
 
-        this._dismissed = false;
         this._actor.visible = true;
         this._positionNearSource();
         this._animateShow();
     }
 
     hide(immediate = false) {
-        if (this._destroyed)
+        if (!this._actor)
             return;
 
-        this._dismissed = true;
         this._app = null;
         this._sourceActor = null;
         this._cancelRefresh();
@@ -200,11 +198,11 @@ export default class WindowPreviewPopup {
     }
 
     destroy() {
-        if (this._destroyed)
+        if (!this._actor)
             return;
 
-        this._destroyed = true;
-        this._dismissed = true;
+        this._app = null;
+        this._sourceActor = null;
         this._popupAnimationId++;
         this._actor.remove_all_transitions();
         this._cancelRefresh();
@@ -215,14 +213,13 @@ export default class WindowPreviewPopup {
         this._windowPeek = null;
 
         this._clearChildren();
-        layoutManager.removeChrome(this._actor);
-        this._actor.destroy();
+        const actor = this._actor;
+        this._actor = null;
+        layoutManager.removeChrome(actor);
+        actor.destroy();
         this._cancelRefresh();
         this._cancelItemHover();
         this._cancelHoverLeave();
-        this._actor = null;
-        this._app = null;
-        this._sourceActor = null;
     }
 
     _clearChildren() {
@@ -258,7 +255,7 @@ export default class WindowPreviewPopup {
 
         button.set_child(layout);
         button.connect('clicked', () => {
-            if (this._dismissed || this._destroyed)
+            if (!this._actor || !this._app || !this._sourceActor)
                 return;
             this.hide(true);
             activateWindow(metaWindow);
@@ -285,7 +282,7 @@ export default class WindowPreviewPopup {
     }
 
     _onItemHoverEnter(item, metaWindow, app) {
-        if (this._dismissed || this._destroyed ||
+        if (!this._actor || !this._app || !this._sourceActor ||
             (!this._enrichedPreviewEnabled && !this._peekEnabled))
             return;
 
@@ -305,7 +302,7 @@ export default class WindowPreviewPopup {
         }
 
         const showEnrichedPreview = () => {
-            if (this._dismissed || this._destroyed ||
+            if (!this._actor || !this._app || !this._sourceActor ||
                 this._hoverIdentity !== hoverId || this._hoveredItem !== item)
                 return;
 
@@ -337,7 +334,7 @@ export default class WindowPreviewPopup {
     }
 
     _onItemHoverLeave() {
-        if (this._dismissed || this._destroyed)
+        if (!this._actor || !this._app || !this._sourceActor)
             return;
 
         this._cancelItemHover();
@@ -351,7 +348,7 @@ export default class WindowPreviewPopup {
             HOVER_LEAVE_DELAY_MS,
             () => {
                 this._hoverLeaveTimeoutId = 0;
-                if (this._dismissed || this._destroyed)
+                if (!this._actor || !this._app || !this._sourceActor)
                     return GLib.SOURCE_REMOVE;
                 if (this._enrichedPreview)
                     this._enrichedPreview.hide();
@@ -399,7 +396,7 @@ export default class WindowPreviewPopup {
     }
 
     _closeWindow(item, metaWindow) {
-        if (this._dismissed || this._destroyed)
+        if (!this._actor || !this._app || !this._sourceActor)
             return;
 
         this._animateWindowClose(item);
@@ -548,7 +545,7 @@ export default class WindowPreviewPopup {
     }
 
     _queueRefresh() {
-        if (this._dismissed || this._destroyed || this._refreshTimeoutId)
+        if (!this._actor || !this._app || !this._sourceActor || this._refreshTimeoutId)
             return;
 
         this._refreshTimeoutId = GLib.timeout_add(
@@ -611,7 +608,7 @@ export default class WindowPreviewPopup {
             duration: this._popupFadeDurationMs,
             mode: Clutter.AnimationMode.EASE_IN_QUAD,
             onStopped: finished => {
-                if (this._destroyed || this._popupAnimationId !== animationId)
+                if (!this._actor || this._popupAnimationId !== animationId)
                     return;
                 this._hiding = false;
                 if (finished)

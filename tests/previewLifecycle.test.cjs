@@ -175,7 +175,8 @@ for (const effect of ['enriched', 'peek', 'pending hover']) {
         hover(shell, popup, item, effect === 'enriched');
         // Inject an orphaned effect to verify recovery independently of its trigger.
         popup._actor.visible = false;
-        popup._dismissed = true;
+        popup._app = null;
+        popup._sourceActor = null;
         tracker._getPointerActor = () => null;
         tracker._pollPointer();
         assert.notEqual(tracker._hideTimeoutId, 0);
