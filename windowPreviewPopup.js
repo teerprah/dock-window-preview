@@ -217,9 +217,6 @@ export default class WindowPreviewPopup {
         this._actor = null;
         layoutManager.removeChrome(actor);
         actor.destroy();
-        this._cancelRefresh();
-        this._cancelItemHover();
-        this._cancelHoverLeave();
     }
 
     _clearChildren() {

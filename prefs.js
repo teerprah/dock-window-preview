@@ -27,7 +27,7 @@ function createSpinRow({title, subtitle, settings, key, min, max, step}) {
     return row;
 }
 
-function createSelectionRow({title, subtitle, settings, signalOwner, key, options}) {
+function createSelectionRow({title, subtitle, settings, connectSettingChanged, key, options}) {
     const row = new Adw.ActionRow({title, subtitle});
     const model = Gtk.StringList.new(options.map(option => option.label));
     const dropdown = new Gtk.DropDown({
@@ -49,7 +49,7 @@ function createSelectionRow({title, subtitle, settings, signalOwner, key, option
         settings.set_string(key, option.value);
     });
 
-    settings.connectObject(`changed::${key}`, syncSelected, signalOwner);
+    connectSettingChanged(`changed::${key}`, syncSelected);
     row.add_suffix(dropdown);
     row.activatable_widget = dropdown;
 
@@ -59,6 +59,16 @@ function createSelectionRow({title, subtitle, settings, signalOwner, key, option
 export default class DockWindowPreviewPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
+        const settingsSignalIds = [];
+        const connectSettingChanged = (signal, callback) => {
+            settingsSignalIds.push(settings.connect(signal, callback));
+        };
+        window.connect('close-request', () => {
+            for (const signalId of settingsSignalIds)
+                settings.disconnect(signalId);
+            settingsSignalIds.length = 0;
+            return false;
+        });
 
         const page = new Adw.PreferencesPage({
             title: 'Dock Preview',
@@ -150,10 +160,9 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
                 row.sensitive = enabled;
         };
         syncEnrichedSensitivity();
-        settings.connectObject(
+        connectSettingChanged(
             'changed::enriched-preview-enabled',
-            syncEnrichedSensitivity,
-            window
+            syncEnrichedSensitivity
         );
         for (const row of enrichedOptionRows)
             enrichedGroup.add(row);
@@ -178,7 +187,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Preview Layout',
             subtitle: 'Choose vertical stack or horizontal strip.',
             settings,
-            signalOwner: window,
+            connectSettingChanged,
             key: 'preview-layout',
             options: [
                 {label: 'Vertical stack', value: 'vertical'},
@@ -191,7 +200,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Title Overflow',
             subtitle: 'Choose whether long titles truncate or wrap.',
             settings,
-            signalOwner: window,
+            connectSettingChanged,
             key: 'title-overflow-mode',
             options: [
                 {label: 'Truncate with ellipsis', value: 'truncate'},
@@ -223,7 +232,7 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             title: 'Close Button Position',
             subtitle: 'Choose which side of the preview card shows the close control.',
             settings,
-            signalOwner: window,
+            connectSettingChanged,
             key: 'close-button-position',
             options: [
                 {label: 'Left side', value: 'left'},
@@ -231,12 +240,11 @@ export default class DockWindowPreviewPreferences extends ExtensionPreferences {
             ],
         });
         closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
-        settings.connectObject(
+        connectSettingChanged(
             'changed::show-close-button',
             () => {
                 closeButtonPositionRow.sensitive = settings.get_boolean('show-close-button');
-            },
-            window
+            }
         );
         previewGroup.add(closeButtonPositionRow);
 

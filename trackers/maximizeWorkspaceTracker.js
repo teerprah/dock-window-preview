@@ -34,6 +34,14 @@ export default class MaximizeWorkspaceTracker {
     }
 
     destroy() {
+        for (const sourceId of this._pendingChecks.values())
+            GLib.Source.remove(sourceId);
+        this._pendingChecks.clear();
+
+        for (const sourceId of this._workspaceCleanupSources.values())
+            GLib.Source.remove(sourceId);
+        this._workspaceCleanupSources.clear();
+
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;
@@ -43,14 +51,6 @@ export default class MaximizeWorkspaceTracker {
             global.display.disconnect(this._windowCreatedId);
             this._windowCreatedId = 0;
         }
-
-        for (const sourceId of this._pendingChecks.values())
-            GLib.Source.remove(sourceId);
-        this._pendingChecks.clear();
-
-        for (const sourceId of this._workspaceCleanupSources.values())
-            GLib.Source.remove(sourceId);
-        this._workspaceCleanupSources.clear();
 
         for (const [metaWindow, signalIds] of this._windowSignals)
             for (const signalId of signalIds)
@@ -96,6 +96,9 @@ export default class MaximizeWorkspaceTracker {
 
     _windowUnmanaged(metaWindow) {
         this._cancelWindowCheck(metaWindow);
+        const signalIds = this._windowSignals.get(metaWindow);
+        for (const signalId of signalIds)
+            metaWindow.disconnect(signalId);
         this._windowSignals.delete(metaWindow);
 
         const state = this._windowStates.get(metaWindow);

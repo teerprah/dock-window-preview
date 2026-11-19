@@ -45,7 +45,7 @@ uninstall:
 	@UUID="$(UUID)" INSTALL_DIR="$(INSTALL_DIR)" ./uninstall.sh
 
 test:
-	@node --experimental-vm-modules tests/previewLifecycle.test.cjs
+	@node --experimental-vm-modules --test tests/*.test.cjs
 
 lint:
 	@eslint $(SOURCE_FILES) prefs.js
